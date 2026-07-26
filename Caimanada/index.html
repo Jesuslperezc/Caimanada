@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CaimanaDa — Sistema de Gestión de Ligas y Torneos Deportivos">
+  <meta name="theme-color" content="#0F172A">
+  <title>CaimanaDa — Gestor de Ligas</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
+
+  <link rel="stylesheet" href="./css/main.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/views.css">
+</head>
+<body>
+
+  <!-- ENCABEZADO Y NAVEGACIÓN SUPERIOR -->
+  <header class="app-header" id="app-header">
+    <div class="app-header__container">
+      
+      <a href="#dashboard" class="app-header__brand" id="brand-logo" aria-label="Ir al Inicio de CaimanaDa">
+        <svg class="app-header__logo-svg" viewBox="0 0 520 140" aria-hidden="true">
+          <g transform="translate(18, 12) scale(1.1)">
+            <polygon points="15,52 47,21 84,30 94,46 71,56 51,51 29,72" fill="#00A86B" />
+            <polygon points="28,61 50,58 74,68 42,82" fill="#006847" />
+            <polygon points="75,26 84,18 87,29" fill="#00A86B" />
+            <polygon points="66,36 72,31 71,39" fill="#FFFFFF" />
+          </g>
+          <text x="135" y="85" font-family="system-ui, sans-serif" font-weight="900" font-size="56" fill="#FFFFFF">
+            aimana<tspan fill="#00A86B">D</tspan>a
+          </text>
+        </svg>
+      </a>
+
+      <div class="sport-badge" id="active-sport-badge" role="status" aria-live="polite">
+        <span class="sport-badge__text" id="active-sport-name">FÚTBOL</span>
+      </div>
+
+      <nav class="nav-desktop" id="nav-desktop" aria-label="Navegación Principal">
+        <ul class="nav-desktop__list">
+          <li class="nav-desktop__item">
+            <a href="#dashboard" class="nav-desktop__link nav-desktop__link--active" id="nav-desktop-dashboard">Inicio</a>
+          </li>
+          <li class="nav-desktop__item">
+            <a href="#leagues" class="nav-desktop__link" id="nav-desktop-leagues">Ligas</a>
+          </li>
+          <li class="nav-desktop__item">
+            <a href="#teams" class="nav-desktop__link" id="nav-desktop-teams">Equipos</a>
+          </li>
+          <li class="nav-desktop__item">
+            <a href="#matches" class="nav-desktop__link" id="nav-desktop-matches">Partidos</a>
+          </li>
+          <li class="nav-desktop__item">
+            <a href="#stats" class="nav-desktop__link" id="nav-desktop-stats">Estadísticas</a>
+          </li>
+        </ul>
+      </nav>
+
+    </div>
+  </header>
+
+
+  <!-- VISTAS DE LA SPA -->
+  <main class="app-content" id="app-router-view">
+
+    <!-- Vista: Dashboard -->
+    <section class="view-section dashboard-view" id="dashboard-section" aria-labelledby="active-league-title">
+      <header class="view-section__header" id="dashboard-header">
+        
+        <!-- Estado por defecto: Si no hay liga activa -->
+        <div class="empty-league-state" id="empty-league-container">
+          <h1 class="view-section__title" id="active-league-title">No hay ninguna liga activa</h1>
+          <p class="view-section__subtitle" id="active-league-mode">Crea tu primera liga para comenzar a gestionar equipos, partidos y estadísticas.</p>
+          <a href="#leagues" class="btn btn--primary" id="btn-create-league">
+            Crear una liga
+          </a>
+        </div>
+
+      </header>
+
+      <div class="dashboard-view__grid">
+        <article class="info-card" id="card-next-match">
+          <header class="info-card__header">
+            <h2 class="info-card__label">Próximo Partido</h2>
+          </header>
+          <div class="info-card__body">
+            <div class="match-summary">
+              <span class="match-summary__team" id="next-match-home">Sin información</span>
+              <span class="match-summary__vs">VS</span>
+              <span class="match-summary__team" id="next-match-away">Sin información</span>
+            </div>
+            <time class="info-card__footer-text" datetime="2026-07-25T20:00" id="next-match-time">Fecha-Hora</time>
+          </div>
+        </article>
+
+        <article class="info-card" id="card-table-leader">
+          <header class="info-card__header">
+            <h2 class="info-card__label">Líder de la Tabla</h2>
+          </header>
+          <div class="info-card__body">
+            <p class="info-card__highlight" id="leader-team-name"></p>
+            <p class="info-card__subtext" id="leader-team-stats"></p>
+          </div>
+        </article>
+
+        <article class="info-card" id="card-sports-info">
+          <header class="info-card__header">
+            <h2 class="info-card__label">Deportes Compatibles</h2>
+          </header>
+          <div class="info-card__body">
+            <p class="info-card__highlight">Fútbol, Ping-Pong, Ajedrez</p>
+            <p class="info-card__subtext">Adaptación automática de reglamentos y métricas</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+
+    <!-- Vista: Ligas -->
+    <section class="view-section leagues-view is-hidden" id="leagues-section" aria-labelledby="leagues-title">
+      <header class="view-section__header">
+        <h1 class="view-section__title" id="leagues-title">Gestión de Ligas</h1>
+        <p class="view-section__subtitle">Crea, configura o cambia de torneo activo</p>
+      </header>
+      <div class="view-section__container" id="leagues-content-target"></div>
+    </section>
+
+
+    <!-- Vista: Equipos -->
+    <section class="view-section teams-view is-hidden" id="teams-section" aria-labelledby="teams-title">
+      <header class="view-section__header">
+        <h1 class="view-section__title" id="teams-title">Equipos Participantes</h1>
+        <p class="view-section__subtitle">Registro de clubes, plantillas y delegados</p>
+      </header>
+      <div class="view-section__container" id="teams-content-target"></div>
+    </section>
+
+
+    <!-- Vista: Partidos -->
+    <section class="view-section matches-view is-hidden" id="matches-section" aria-labelledby="matches-title">
+      <header class="view-section__header">
+        <h1 class="view-section__title" id="matches-title">Calendario de Partidos</h1>
+        <p class="view-section__subtitle">Fixtures, marcadores en vivo y resultados</p>
+      </header>
+      <div class="view-section__container" id="matches-content-target"></div>
+    </section>
+
+
+    <!-- Vista: Estadísticas -->
+    <section class="view-section stats-view is-hidden" id="stats-section" aria-labelledby="stats-title">
+      <header class="view-section__header">
+        <h1 class="view-section__title" id="stats-title">Tabla de Posiciones y Stats</h1>
+        <p class="view-section__subtitle">Clasificación general y rendimiento de deportistas</p>
+      </header>
+      <div class="view-section__container" id="stats-content-target"></div>
+    </section>
+
+  </main>
+
+
+  <!-- NAVEGACIÓN INFERIOR MÓVIL -->
+  <nav class="nav-mobile" id="nav-mobile" aria-label="Navegación Inferior Móvil">
+    <ul class="nav-mobile__list">
+      
+      <li class="nav-mobile__item">
+        <a href="#dashboard" class="nav-mobile__link nav-mobile__link--active" id="nav-mobile-dashboard">
+          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span class="nav-mobile__label">Inicio</span>
+        </a>
+      </li>
+
+      <li class="nav-mobile__item">
+        <a href="#leagues" class="nav-mobile__link" id="nav-mobile-leagues">
+          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+          </svg>
+          <span class="nav-mobile__label">Ligas</span>
+        </a>
+      </li>
+
+      <li class="nav-mobile__item">
+        <a href="#teams" class="nav-mobile__link" id="nav-mobile-teams">
+          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="nav-mobile__label">Equipos</span>
+        </a>
+      </li>
+
+      <li class="nav-mobile__item">
+        <a href="#matches" class="nav-mobile__link" id="nav-mobile-matches">
+          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <path d="M8 13h8"/>
+            <path d="M8 17h8"/>
+          </svg>
+          <span class="nav-mobile__label">Partidos</span>
+        </a>
+      </li>
+
+      <li class="nav-mobile__item">
+        <a href="#stats" class="nav-mobile__link" id="nav-mobile-stats">
+          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="nav-mobile__label">Stats</span>
+        </a>
+      </li>
+
+    </ul>
+  </nav>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+/* ==========================================================================
+   1. REGISTRO DE SVGS Y SVG UTILITIES
+   ========================================================================== */
+
+/* Ajuste general para íconos vectoriales */
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Transición suave cuando cambien los colores de trazo/relleno */
+.nav-mobile__icon,
+.app-header__logo-svg {
+  transition: transform 0.2s ease, stroke 0.2s ease, fill 0.2s ease;
+}
+
+
+/* ==========================================================================
+   2. APP HEADER (NAVBAR SUPERIOR DESKTOP)
+   ========================================================================== */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  background-color: rgba(15, 23, 42, 0.85); /* Fondo oscuro semitransparente */
+  backdrop-filter: blur(12px); /* Efecto Glassmorphism */
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-header__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem;
+  height: 64px;
+}
+
+/* Logotipo */
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  outline: none;
+}
+
+.app-header__logo-svg {
+  height: 38px;
+  width: auto;
+}
+
+.app-header__brand:hover .app-header__logo-svg {
+  transform: scale(1.02);
+}
+
+/* Insignia del Deporte Activo */
+.sport-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  background-color: rgba(0, 168, 107, 0.15);
+  border: 1px solid rgba(0, 168, 107, 0.3);
+  border-radius: 9999px;
+}
+
+.sport-badge__text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #00A86B;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Navegación Desktop */
+.nav-desktop {
+  display: none; /* Oculto en pantallas pequeñas */
+}
+
+.nav-desktop__list {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-desktop__link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #94A3B8; /* Gris tenue */
+  text-decoration: none;
+  padding: 0.5rem 0.25rem;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.nav-desktop__link:hover {
+  color: #FFFFFF;
+}
+
+/* Indicador activo bajo el texto */
+.nav-desktop__link--active {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.nav-desktop__link--active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #00A86B;
+  border-radius: 2px;
+}
+
+
+/* ==========================================================================
+   3. BOTTOM NAV (NAVEGACIÓN MÓVIL INFERIOR)
+   ========================================================================== */
+
+.nav-mobile {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: env(safe-area-inset-bottom); /* Soporte para marcos de iPhones */
+}
+
+.nav-mobile__list {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.nav-mobile__item {
+  flex: 1;
+  text-align: center;
+}
+
+.nav-mobile__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  text-decoration: none;
+  color: #64748B; /* Estado inactivo */
+  padding: 0.25rem 0;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.nav-mobile__icon {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+}
+
+.nav-mobile__label {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* Estado activo en Mobile */
+.nav-mobile__link--active {
+  color: #00A86B; /* Verde Caimán */
+}
+
+.nav-mobile__link--active .nav-mobile__icon {
+  transform: translateY(-2px);
+}
+
+.nav-mobile__link:active {
+  transform: scale(0.92);
+}
+
+
+/* ==========================================================================
+   4. MEDIA QUERIES (ADAPTACIÓN DE ESCRITORIO Y TABLET)
+   ========================================================================== */
+
+@media (min-width: 768px) {
+  /* Mostrar navegación en Desktop */
+  .nav-desktop {
+    display: block;
+  }
+
+  /* Ocultar la barra inferior en pantallas grandes */
+  .nav-mobile {
+    display: none;
+  }
+}
