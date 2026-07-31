@@ -166,18 +166,20 @@ svg {
   color: var(--text-muted);
 }
 
-/* Navegacion para tlf */
+/* Navegacion */
 .nav-mobile {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background-color: rgba(15, 23, 42, 0.94);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-top: 1px solid var(--border-subtle);
-  padding-bottom: env(safe-area-inset-bottom);
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 1000;
+  background-color: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 6px 8px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 .nav-mobile__list {
@@ -185,30 +187,36 @@ svg {
   align-items: center;
   justify-content: space-around;
   list-style: none;
-  padding: 0.6rem 0;
+  margin: 0;
+  padding: 0;
 }
 
 .nav-mobile__item {
   flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .nav-mobile__link {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: 3px;
   text-decoration: none;
   color: var(--text-muted);
-  transition: color 0.2s ease, transform 0.15s ease;
+  padding: 4px 0;
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
 .nav-mobile__icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 .nav-mobile__label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 600;
 }
 
@@ -216,8 +224,33 @@ svg {
   color: var(--accent-primary);
 }
 
-.nav-mobile__link--active .nav-mobile__icon {
-  transform: translateY(-2px);
+.nav-mobile__item--action {
+  position: relative;
+  top: -16px;
+}
+
+.nav-mobile__action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #007A4D 100%);
+  color: #FFFFFF;
+  border-radius: 50%;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(0, 168, 107, 0.45), 0 0 0 5px var(--bg-main, #0F172A);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nav-mobile__action-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: #FFFFFF;
+}
+
+.nav-mobile__action-btn:active {
+  transform: scale(0.92);
 }
 
 /* Media Queries */
