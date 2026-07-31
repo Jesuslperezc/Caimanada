@@ -160,71 +160,73 @@
   </main>
 
 
-  <!-- NAVEGACIÓN INFERIOR MÓVIL -->
-  <nav class="nav-mobile" id="nav-mobile" aria-label="Navegación Inferior Móvil">
-    <ul class="nav-mobile__list">
-      
-      <li class="nav-mobile__item">
-        <a href="#dashboard" class="nav-mobile__link nav-mobile__link--active" id="nav-mobile-dashboard">
-          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          <span class="nav-mobile__label">Inicio</span>
-        </a>
-      </li>
+<!-- NAVEGACION INFERIOR MOVIL -->
+<nav class="nav-mobile" id="nav-mobile" aria-label="Navegación Inferior Móvil">
+  <ul class="nav-mobile__list">
+    
+    <!-- Inicio -->
+    <li class="nav-mobile__item">
+      <a href="#dashboard" class="nav-mobile__link nav-mobile__link--active" id="nav-mobile-dashboard">
+        <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span class="nav-mobile__label">Inicio</span>
+      </a>
+    </li>
 
-      <li class="nav-mobile__item">
-        <a href="#leagues" class="nav-mobile__link" id="nav-mobile-leagues">
-          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-            <path d="M4 22h16"/>
-            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-          </svg>
-          <span class="nav-mobile__label">Ligas</span>
-        </a>
-      </li>
+    <!-- Ligas -->
+    <li class="nav-mobile__item">
+      <a href="#leagues" class="nav-mobile__link" id="nav-mobile-leagues">
+        <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+          <path d="M4 22h16"/>
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+        </svg>
+        <span class="nav-mobile__label">Ligas</span>
+      </a>
+    </li>
 
-      <li class="nav-mobile__item">
-        <a href="#teams" class="nav-mobile__link" id="nav-mobile-teams">
-          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          <span class="nav-mobile__label">Equipos</span>
-        </a>
-      </li>
+    <!-- Boton de creacion -->
+    <li class="nav-mobile__item nav-mobile__item--action">
+      <a href="#leagues" class="nav-mobile__action-btn" id="nav-mobile-create" aria-label="Crear Nueva Liga o Registro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </a>
+    </li>
 
-      <li class="nav-mobile__item">
-        <a href="#matches" class="nav-mobile__link" id="nav-mobile-matches">
-          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <path d="M8 13h8"/>
-            <path d="M8 17h8"/>
-          </svg>
-          <span class="nav-mobile__label">Partidos</span>
-        </a>
-      </li>
+    <!-- Equipos / Partidos -->
+    <li class="nav-mobile__item">
+      <a href="#matches" class="nav-mobile__link" id="nav-mobile-matches">
+        <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <path d="M8 13h8"/>
+          <path d="M8 17h8"/>
+        </svg>
+        <span class="nav-mobile__label">Partidos</span>
+      </a>
+    </li>
 
-      <li class="nav-mobile__item">
-        <a href="#stats" class="nav-mobile__link" id="nav-mobile-stats">
-          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-          <span class="nav-mobile__label">Stats</span>
-        </a>
-      </li>
+    <!-- Stats -->
+    <li class="nav-mobile__item">
+      <a href="#stats" class="nav-mobile__link" id="nav-mobile-stats">
+        <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span class="nav-mobile__label">Stats</span>
+      </a>
+    </li>
 
-    </ul>
-  </nav>
+  </ul>
+</nav>
 
   <script type="module" src="./js/app.js"></script>
 </body>
