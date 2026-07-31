@@ -1,34 +1,25 @@
-/* ==========================================================================
-   1. REGISTRO DE SVGS Y SVG UTILITIES
-   ========================================================================== */
-
-/* Ajuste general para íconos vectoriales */
+/* Logo */
 svg {
   display: block;
   max-width: 100%;
   height: auto;
 }
 
-/* Transición suave cuando cambien los colores de trazo/relleno */
 .nav-mobile__icon,
 .app-header__logo-svg {
   transition: transform 0.2s ease, stroke 0.2s ease, fill 0.2s ease;
 }
 
-
-/* ==========================================================================
-   2. APP HEADER (NAVBAR SUPERIOR DESKTOP)
-   ========================================================================== */
-
+/* Logo y menu */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 100;
   width: 100%;
-  background-color: rgba(15, 23, 42, 0.85); /* Fondo oscuro semitransparente */
-  backdrop-filter: blur(12px); /* Efecto Glassmorphism */
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--bg-header);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .app-header__container {
@@ -38,63 +29,57 @@ svg {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0.75rem 1.25rem;
-  height: 64px;
+  height: 68px;
 }
 
-/* Logotipo */
 .app-header__brand {
   display: flex;
   align-items: center;
   text-decoration: none;
-  outline: none;
 }
 
 .app-header__logo-svg {
-  height: 38px;
+  height: 40px;
   width: auto;
 }
 
 .app-header__brand:hover .app-header__logo-svg {
-  transform: scale(1.02);
+  transform: scale(1.03);
 }
 
-/* Insignia del Deporte Activo */
+/* Deporte Seleccionado */
 .sport-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 0.25rem 0.75rem;
-  background-color: rgba(0, 168, 107, 0.15);
-  border: 1px solid rgba(0, 168, 107, 0.3);
-  border-radius: 9999px;
+  padding: 0.3rem 0.85rem;
+  background-color: rgba(0, 168, 107, 0.12);
+  border: 1px solid rgba(0, 168, 107, 0.35);
+  border-radius: var(--radius-full);
 }
 
 .sport-badge__text {
   font-size: 0.75rem;
-  font-weight: 700;
-  color: #00A86B;
-  letter-spacing: 0.05em;
+  font-weight: 800;
+  color: var(--accent-primary);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-/* Navegación Desktop */
 .nav-desktop {
-  display: none; /* Oculto en pantallas pequeñas */
+  display: none;
 }
 
 .nav-desktop__list {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.75rem;
   list-style: none;
-  margin: 0;
-  padding: 0;
 }
 
 .nav-desktop__link {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #94A3B8; /* Gris tenue */
+  color: var(--text-secondary);
   text-decoration: none;
   padding: 0.5rem 0.25rem;
   position: relative;
@@ -102,42 +87,97 @@ svg {
 }
 
 .nav-desktop__link:hover {
-  color: #FFFFFF;
+  color: var(--text-primary);
 }
 
-/* Indicador activo bajo el texto */
 .nav-desktop__link--active {
-  color: #FFFFFF;
-  font-weight: 600;
+  color: var(--text-primary);
+  font-weight: 700;
 }
 
 .nav-desktop__link--active::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  bottom: -6px;
   left: 0;
   width: 100%;
-  height: 2px;
-  background-color: #00A86B;
-  border-radius: 2px;
+  height: 3px;
+  background-color: var(--accent-primary);
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 10px var(--accent-primary);
 }
 
+/* Tarjeta de Informacion */
+.info-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
 
-/* ==========================================================================
-   3. BOTTOM NAV (NAVEGACIÓN MÓVIL INFERIOR)
-   ========================================================================== */
+.info-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-3px);
+}
 
+.info-card__header {
+  margin-bottom: 1rem;
+}
+
+.info-card__label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-primary);
+}
+
+.info-card__highlight {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.info-card__subtext {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.match-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.match-summary__vs {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+/* Navegacion para tlf */
 .nav-mobile {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  background-color: rgba(15, 23, 42, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: env(safe-area-inset-bottom); /* Soporte para marcos de iPhones */
+  background-color: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--border-subtle);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .nav-mobile__list {
@@ -145,63 +185,47 @@ svg {
   align-items: center;
   justify-content: space-around;
   list-style: none;
-  margin: 0;
-  padding: 0.5rem 0;
+  padding: 0.6rem 0;
 }
 
 .nav-mobile__item {
   flex: 1;
-  text-align: center;
 }
 
 .nav-mobile__link {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 0.25rem;
   text-decoration: none;
-  color: #64748B; /* Estado inactivo */
-  padding: 0.25rem 0;
+  color: var(--text-muted);
   transition: color 0.2s ease, transform 0.15s ease;
 }
 
 .nav-mobile__icon {
   width: 22px;
   height: 22px;
-  stroke: currentColor;
 }
 
 .nav-mobile__label {
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-/* Estado activo en Mobile */
 .nav-mobile__link--active {
-  color: #00A86B; /* Verde Caimán */
+  color: var(--accent-primary);
 }
 
 .nav-mobile__link--active .nav-mobile__icon {
   transform: translateY(-2px);
 }
 
-.nav-mobile__link:active {
-  transform: scale(0.92);
-}
-
-
-/* ==========================================================================
-   4. MEDIA QUERIES (ADAPTACIÓN DE ESCRITORIO Y TABLET)
-   ========================================================================== */
-
+/* Media Queries */
 @media (min-width: 768px) {
-  /* Mostrar navegación en Desktop */
   .nav-desktop {
     display: block;
   }
 
-  /* Ocultar la barra inferior en pantallas grandes */
   .nav-mobile {
     display: none;
   }
