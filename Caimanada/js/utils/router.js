@@ -1,4 +1,6 @@
-// Detecta el hash y ejecuta la vista
+import { renderLeaguesView } from '../views/leagues.js';
+import { renderTeamsView } from '../views/teams.js';
+
 export function handleRoute() {
   const rawHash = window.location.hash.trim();
   const currentHash = (rawHash && rawHash !== '#') ? rawHash : '#dashboard';
@@ -25,9 +27,14 @@ export function handleRoute() {
       defaultSection.classList.remove('is-hidden');
     }
   }
+
+  if (cleanName === 'leagues') {
+    renderLeaguesView().catch(err => console.error('Error renderizando ligas:', err));
+  } else if (cleanName === 'teams') {
+    renderTeamsView().catch(err => console.error('Error renderizando equipos:', err));
+  }
 }
 
-// Inicializa el enrutador
 export function initRouter() {
   window.addEventListener('hashchange', handleRoute);
   handleRoute();

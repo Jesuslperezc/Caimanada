@@ -8,18 +8,20 @@ export async function getAllLeagues() {
 
 export async function getActiveLeague() {
   const allLeagues = await getAllLeagues();
-  const active = allLeagues.find(league => league.isActive === true);
-  return active || null;
+  return allLeagues.find(league => league.isActive === true) || null;
 }
 
 export async function createLeague(leagueData) {
+  const allLeagues = await getAllLeagues();
+  const isFirstLeague = allLeagues.length === 0;
+
   const newLeague = {
     id: `league_${Date.now()}`,
     name: leagueData.name,
     sport: leagueData.sport || 'Fútbol',
-    mode: leagueData.mode || 'Todos contra todos',
+    mode: leagueData.mode || 'Liga',
     createdAt: new Date().toISOString(),
-    isActive: leagueData.isActive ?? false
+    isActive: leagueData.isActive ?? isFirstLeague
   };
 
   await executeTransaction(STORE_NAME, 'readwrite', (store) => store.add(newLeague));
@@ -35,8 +37,11 @@ export async function setActiveLeague(leagueId) {
   const leagues = await getAllLeagues();
 
   for (const league of leagues) {
-    league.isActive = (league.id === leagueId);
-    await executeTransaction(STORE_NAME, 'readwrite', (store) => store.put(league));
+    const shouldBeActive = (league.id === leagueId);
+    if (league.isActive !== shouldBeActive) {
+      league.isActive = shouldBeActive;
+      await executeTransaction(STORE_NAME, 'readwrite', (store) => store.put(league));
+    }
   }
 }
 
