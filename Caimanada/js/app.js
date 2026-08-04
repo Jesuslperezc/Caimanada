@@ -1,8 +1,7 @@
-import { initNavbar } from './js/components/navbar.js';
-import { initRouter } from './js/utils/router.js';
+import { initRouter } from './utils/router.js';
+import { initNavbar } from './components/navbar.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
-  
   initRouter();
 });

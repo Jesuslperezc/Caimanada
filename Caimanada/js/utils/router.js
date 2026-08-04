@@ -1,28 +1,29 @@
-import { renderDashboard } from '../views/dashboard.js';
-import { renderLeagues } from '../views/leagues.js';
-import { renderTeams } from '../views/teams.js';
-import { renderMatches } from '../views/matches.js';
-import { renderStats } from '../views/stats.js';
-
-// Rutas asociadas
-const routes = {
-  '#dashboard': renderDashboard,
-  '#leagues': renderLeagues,
-  '#teams': renderTeams,
-  '#matches': renderMatches,
-  '#stats': renderStats,
-};
-
 // Detecta el hash y ejecuta la vista
 export function handleRoute() {
-  const appContainer = document.getElementById('app');
-  const hash = window.location.hash || '#dashboard';
+  const rawHash = window.location.hash.trim();
+  const currentHash = (rawHash && rawHash !== '#') ? rawHash : '#dashboard';
+  
+  const baseHash = currentHash.split('/')[0];
+  const cleanName = baseHash.replace('#', '');
+  const targetSectionId = `${cleanName}-section`;
 
-  const renderView = routes[hash] || routes['#dashboard'];
+  const sections = document.querySelectorAll('.view-section');
+  let found = false;
 
-  if (appContainer && typeof renderView === 'function') {
-    appContainer.innerHTML = '';
-    renderView(appContainer);
+  sections.forEach((section) => {
+    if (section.id === targetSectionId) {
+      section.classList.remove('is-hidden');
+      found = true;
+    } else {
+      section.classList.add('is-hidden');
+    }
+  });
+
+  if (!found) {
+    const defaultSection = document.getElementById('dashboard-section');
+    if (defaultSection) {
+      defaultSection.classList.remove('is-hidden');
+    }
   }
 }
 

@@ -131,12 +131,30 @@
     <!-- Vista: Equipos -->
     <section class="view-section teams-view is-hidden" id="teams-section" aria-labelledby="teams-title">
       <header class="view-section__header">
-        <h1 class="view-section__title" id="teams-title">Equipos Participantes</h1>
-        <p class="view-section__subtitle">Registro de clubes, plantillas y delegados</p>
+        <div class="view-section__header-content">
+          <h1 class="view-section__title" id="teams-title">Equipos Participantes</h1>
+          <p class="view-section__subtitle">Registro de clubes, plantillas y delegados</p>
+        </div>
+        
+        <!-- Boton Principal -->
+        <button class="btn btn--primary" id="btn-add-team">
+          Registrar Equipo
+        </button>
       </header>
-      <div class="view-section__container" id="teams-content-target"></div>
-    </section>
+      <!-- Buscador -->
+      <div class="teams-actions">
+        <input 
+          type="search" 
+          class="form-input" 
+          id="teams-search-input" 
+          placeholder="Buscar equipo o delegado..."
+          aria-label="Buscar equipo"
+        >
+      </div>
+      <div class="view-section__container" id="teams-content-target">
+      </div>
 
+    </section>
 
     <!-- Vista: Partidos -->
     <section class="view-section matches-view is-hidden" id="matches-section" aria-labelledby="matches-title">
@@ -200,18 +218,31 @@
       </a>
     </li>
 
-    <!-- Equipos / Partidos -->
-    <li class="nav-mobile__item">
-      <a href="#matches" class="nav-mobile__link" id="nav-mobile-matches">
-        <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <path d="M8 13h8"/>
-          <path d="M8 17h8"/>
-        </svg>
-        <span class="nav-mobile__label">Partidos</span>
-      </a>
-    </li>
+      <!-- Equipos -->
+      <li class="nav-mobile__item">
+        <a href="#teams" class="nav-mobile__link" id="nav-mobile-teams">
+          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span class="nav-mobile__label">Equipos</span>
+        </a>
+      </li>
+
+      <!-- Partidos -->
+      <li class="nav-mobile__item">
+        <a href="#matches" class="nav-mobile__link" id="nav-mobile-matches">
+          <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <path d="M8 13h8"/>
+            <path d="M8 17h8"/>
+          </svg>
+          <span class="nav-mobile__label">Partidos</span>
+        </a>
+      </li>
 
     <!-- Stats -->
     <li class="nav-mobile__item">
