@@ -111,28 +111,57 @@ async function renderLeagueChartSection(leagues) {
     statsContainer.innerHTML = '';
     return;
   }
-
-  // Obtenemos la cantidad de equipos por cada liga para pasarlo al gráfico
-  const leaguesDataWithCounts = await Promise.all(leagues.map(async (league) => {
+  // Equipo con mas victorias por liga
+    const leaguesDataWithTopWins = await Promise.all(leagues.map(async (league) => {
     const teams = await getTeamsByLeague(league.id);
+    const matches = await getMatchesByLeague(league.id);
+
+    // Victorias por equipo en la liga
+    const winsMap = {};
+    teams.forEach(t => { winsMap[t.id] = 0; });
+
+    matches.forEach(match => {
+      if (match.status === 'completed' && match.scoreHome !== null && match.scoreAway !== null) {
+        if (match.scoreHome > match.scoreAway) {
+          winsMap[match.homeTeamId] = (winsMap[match.homeTeamId] || 0) + 1;
+        } else if (match.scoreAway > match.scoreHome) {
+          winsMap[match.awayTeamId] = (winsMap[match.awayTeamId] || 0) + 1;
+        }
+      }
+    });
+
+    // Equipo con mayor numero de victorias
+    let topTeamName = 'Sin datos';
+    let maxWins = 0;
+
+    teams.forEach(t => {
+      const wins = winsMap[t.id] || 0;
+      if (wins > maxWins) {
+        maxWins = wins;
+        topTeamName = t.name;
+      }
+    });
+
     return {
       ...league,
-      teamsCount: teams.length
+      teamsCount: teams.length,
+      topTeamName: maxWins > 0 ? topTeamName : 'Sin definir',
+      topTeamWins: maxWins
     };
   }));
 
   statsContainer.innerHTML = `
     <article class="info-card">
       <header class="info-card__header">
-        <h3 class="info-card__label" style="margin-bottom: 1rem;">Distribución de Equipos por Liga</h3>
+        <h3 class="info-card__label" style="margin-bottom: 1rem;">Equipos Registrados vs. Líder en Victorias por Liga</h3>
       </header>
-      <div class="chart-wrapper" style="position: relative; height: 280px; width: 100%;">
+      <div class="chart-wrapper" style="position: relative; height: 320px; width: 100%;">
         <canvas id="canvas-league-stats"></canvas>
       </div>
     </article>
   `;
 
-  renderLeagueStatsChart('canvas-league-stats', leaguesDataWithCounts);
+  renderLeagueStatsChart('canvas-league-stats', leaguesDataWithTopWins);
 }
 
 async function renderLeaguesCards(leagues, activeLeague) {
