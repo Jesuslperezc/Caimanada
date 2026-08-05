@@ -2,31 +2,51 @@ import { executeTransaction } from '../db.js';
 
 const STORE_NAME = 'teams';
 
-// Obtener equipos asociados a un deporte en específico
+// Obtener equipos asociados a un deporte en específico (con soporte para registros antiguos)
 export async function getTeamsBySport(sportId) {
   return executeTransaction(STORE_NAME, 'readonly', (store) => {
     return new Promise((resolve, reject) => {
-      // Si tienes un índice por sportId configurado en IndexedDB
+      // Si el índice existe, intentamos consultar directamente por sportId
       if (store.indexNames.contains('sportId')) {
         const index = store.index('sportId');
         const request = index.getAll(sportId);
-        
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = (e) => reject(e.target.error);
-      } else {
-        // Fallback: Traer todos los registros y filtrar en memoria
-        const request = store.getAll();
 
         request.onsuccess = () => {
-          const allTeams = request.result || [];
-          const filtered = allTeams.filter(t => t.sportId === sportId);
-          resolve(filtered);
+          const results = request.result || [];
+          // Si encontró resultados por sportId los devuelve
+          if (results.length > 0) {
+            resolve(results);
+          } else {
+            // Si no hay resultados por índice, leemos todos para incluir equipos heredados
+            fetchAllWithFallback(store, sportId, resolve, reject);
+          }
         };
-        
         request.onerror = (e) => reject(e.target.error);
+      } else {
+        // Fallback cuando aún no existe el índice sportId en la DB
+        fetchAllWithFallback(store, sportId, resolve, reject);
       }
     });
   });
+}
+
+/**
+ * Función auxiliar para leer todos los equipos y filtrar en memoria,
+ * asignando por defecto los equipos sin sportId al deporte activo actual.
+ */
+function fetchAllWithFallback(store, sportId, resolve, reject) {
+  const request = store.getAll();
+
+  request.onsuccess = () => {
+    const allTeams = request.result || [];
+    const filtered = allTeams.filter(t => {
+      // Coincide con el deporte activo O no tiene sportId (equipo previo a la migración)
+      return t.sportId === sportId || !t.sportId;
+    });
+    resolve(filtered);
+  };
+
+  request.onerror = (e) => reject(e.target.error);
 }
 export async function getTeamsByLeague(leagueId) {
   return executeTransaction(STORE_NAME, 'readonly', (store) => {

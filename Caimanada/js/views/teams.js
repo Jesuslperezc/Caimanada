@@ -4,7 +4,6 @@ import { getMatchesByLeague } from '../db/repositories/matches.js';
 import { getPlayersByTeam, addPlayer, deletePlayer } from '../db/repositories/players.js';
 import { calculateStandings } from '../utils/statsCalculator.js';
 
-// Límites configurables por deporte
 const SPORT_ROSTER_LIMITS = {
   futbol_sala: 12,
   futbol_campo: 22,
@@ -16,7 +15,6 @@ const SPORT_ROSTER_LIMITS = {
 };
 
 function getActiveSport() {
-  // Obtiene el deporte guardado globalmente en tu app o retorna un fallback
   return localStorage.getItem('active_sport_id') || 'futbol_sala';
 }
 
@@ -38,13 +36,20 @@ export async function renderTeamsView() {
   if (!container) return;
 
   const activeSportId = getActiveSport();
-  const activeLeague = await getActiveLeague(); // Puede ser null si el equipo aún no está suscrito a ninguna liga
+  const activeLeague = await getActiveLeague();
 
-  // Cargar equipos del Deporte Activo (Independiente de si hay liga activa o no)
   const rawTeamsData = await getTeamsBySport(activeSportId);
   const teamsData = Array.isArray(rawTeamsData) ? rawTeamsData : [];
 
-  // Recopilar estadísticas si existe una liga activa
+  // Mapeo dinámico del número real de jugadores
+  const playersCountMap = {};
+  await Promise.all(
+    teamsData.map(async (team) => {
+      const players = await getPlayersByTeam(team.id);
+      playersCountMap[team.id] = players ? players.length : 0;
+    })
+  );
+
   let statsMap = {};
   if (activeLeague) {
     const matchesData = await getMatchesByLeague(activeLeague.id);
@@ -69,7 +74,7 @@ export async function renderTeamsView() {
           const safeName = escapeHTML(team.name);
           const safeDelegate = escapeHTML(team.delegate || 'Sin asignar');
           const safeColor = team.color ? escapeHTML(team.color) : 'var(--accent-primary, #3b82f6)';
-          const playersCount = Array.isArray(team.players) ? team.players.length : 0;
+          const playersCount = playersCountMap[team.id] || 0;
           const safeId = escapeHTML(team.id);
           const st = statsMap[team.id] || { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 };
 
@@ -98,9 +103,13 @@ export async function renderTeamsView() {
                 </div>
               </div>
 
-              <footer class="info-card__footer">
+              <!-- Tres acciones diferenciadas en el footer -->
+              <footer class="info-card__footer" style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
                 <button class="btn btn--secondary btn--sm btn-view-roster" data-id="${safeId}" data-name="${safeName}">
-                  Ver Plantilla
+                  Plantilla
+                </button>
+                <button class="btn btn--primary btn--sm btn-add-player" data-id="${safeId}" data-name="${safeName}">
+                  + Jugador
                 </button>
                 <button class="btn btn--danger btn--sm btn-delete-team" data-id="${safeId}" data-name="${safeName}">
                   Eliminar
@@ -115,7 +124,7 @@ export async function renderTeamsView() {
     renderTeamCharts();
   }
 
-  // Buscador en tiempo real
+  // Buscador
   if (searchInput) {
     const newSearchInput = searchInput.cloneNode(true);
     searchInput.parentNode.replaceChild(newSearchInput, searchInput);
@@ -131,24 +140,33 @@ export async function renderTeamsView() {
     });
   }
 
-  // Registrar equipo
+  // Botón Principal Registrar Equipo
   if (addBtn) {
     addBtn.onclick = () => {
       openAddTeamModal(activeSportId, activeLeague?.id || null, () => renderTeamsView());
     };
   }
 
-  // Eventos de tarjetas
+  // Delegación de Eventos en Tarjetas
   container.onclick = async (e) => {
-    const target = e.target;
-    const safeId = target.dataset.id;
-    const safeName = target.dataset.name;
+    const btn = e.target.closest('button');
+    if (!btn) return;
 
-    if (target.classList.contains('btn-view-roster')) {
-      openRosterModal(safeId, safeName, activeSportId, () => renderTeamsView());
+    const safeId = btn.dataset.id;
+    const safeName = btn.dataset.name;
+
+    // 1. Ver/Editar Plantilla
+    if (btn.classList.contains('btn-view-roster')) {
+      openRosterModal(safeId, safeName, () => renderTeamsView());
     }
 
-    if (target.classList.contains('btn-delete-team')) {
+    // 2. Agregar Jugador
+    if (btn.classList.contains('btn-add-player')) {
+      openAddPlayerModal(safeId, safeName, activeSportId, () => renderTeamsView());
+    }
+
+    // 3. Eliminar Equipo
+    if (btn.classList.contains('btn-delete-team')) {
       if (confirm(`¿Deseas eliminar al equipo "${safeName}"?`)) {
         await deleteTeam(safeId);
         renderTeamsView();
@@ -160,7 +178,7 @@ export async function renderTeamsView() {
 }
 
 // ==========================================
-// MODAL DE REGISTRO DE EQUIPO
+// 1. MODAL REGISTRO DE EQUIPO
 // ==========================================
 function openAddTeamModal(sportId, leagueId, onSaveCallback) {
   document.getElementById('dynamic-team-modal')?.remove();
@@ -192,11 +210,9 @@ function openAddTeamModal(sportId, leagueId, onSaveCallback) {
   document.body.insertAdjacentHTML('beforeend', modalHTML);
 
   const modalEl = document.getElementById('dynamic-team-modal');
-  const formEl = document.getElementById('dynamic-team-form');
-
   document.getElementById('dyn-team-cancel').onclick = () => modalEl.remove();
 
-  formEl.onsubmit = async (e) => {
+  document.getElementById('dynamic-team-form').onsubmit = async (e) => {
     e.preventDefault();
     const name = document.getElementById('dyn-team-name').value.trim();
     const delegate = document.getElementById('dyn-team-delegate').value.trim();
@@ -210,33 +226,17 @@ function openAddTeamModal(sportId, leagueId, onSaveCallback) {
 }
 
 // ==========================================
-// MODAL DE PLANTILLA CON CONTROL DE LÍMITE
+// 2. MODAL VER PLANTILLA (SÓLO LECTURA Y EDICIÓN/BORRADO)
 // ==========================================
-function openRosterModal(teamId, teamName, sportId, onCloseCallback) {
+function openRosterModal(teamId, teamName, onCloseCallback) {
   document.getElementById('dynamic-roster-modal')?.remove();
-
-  const maxPlayers = SPORT_ROSTER_LIMITS[sportId] || SPORT_ROSTER_LIMITS.default;
 
   const modalHTML = `
     <div id="dynamic-roster-modal" class="modal-overlay">
       <div class="modal-card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 class="modal-card__title">Plantilla: ${escapeHTML(teamName)}</h2>
-          <span id="dyn-roster-counter" style="font-size: 0.85rem; font-weight: bold; color: var(--text-muted, #94a3b8);">
-            0 / ${maxPlayers}
-          </span>
-        </div>
+        <h2 class="modal-card__title">Plantilla: ${escapeHTML(teamName)}</h2>
         
-        <div id="dyn-players-list" class="players-list" style="max-height: 220px; overflow-y: auto; margin: 1rem 0; padding-right: 0.25rem;"></div>
-
-        <form id="dyn-player-form" style="display: flex; gap: 0.5rem; align-items: center;">
-          <input type="text" id="dyn-player-name" placeholder="Nombre jugador" required class="form-control" style="flex: 2; padding: 0.4rem;" />
-          <input type="number" id="dyn-player-number" placeholder="#" min="0" max="99" required class="form-control" style="flex: 1; padding: 0.4rem;" />
-          <button type="submit" id="dyn-btn-add-player" class="btn btn--primary">+</button>
-        </form>
-        <p id="dyn-roster-warning" style="color: #ef4444; font-size: 0.8rem; margin-top: 0.4rem; display: none;">
-          Límite máximo de plantilla alcanzado (${maxPlayers} jugadores).
-        </p>
+        <div id="dyn-players-list" class="players-list" style="max-height: 280px; overflow-y: auto; margin: 1rem 0; padding-right: 0.25rem;"></div>
 
         <div class="modal-actions" style="margin-top: 1.25rem; text-align: right;">
           <button type="button" id="dyn-roster-close" class="btn btn--secondary">Cerrar</button>
@@ -248,10 +248,6 @@ function openRosterModal(teamId, teamName, sportId, onCloseCallback) {
   document.body.insertAdjacentHTML('beforeend', modalHTML);
 
   const modalEl = document.getElementById('dynamic-roster-modal');
-  const formEl = document.getElementById('dyn-player-form');
-  const addBtn = document.getElementById('dyn-btn-add-player');
-  const warningEl = document.getElementById('dyn-roster-warning');
-  const counterEl = document.getElementById('dyn-roster-counter');
 
   const closeModal = () => {
     modalEl.remove();
@@ -265,54 +261,107 @@ function openRosterModal(teamId, teamName, sportId, onCloseCallback) {
     if (!listContainer) return;
 
     const players = await getPlayersByTeam(teamId);
-    const count = players.length;
 
-    counterEl.textContent = `${count} / ${maxPlayers}`;
-
-    // Evaluación del límite de la plantilla
-    if (count >= maxPlayers) {
-      addBtn.disabled = true;
-      warningEl.style.display = 'block';
-    } else {
-      addBtn.disabled = false;
-      warningEl.style.display = 'none';
-    }
-
-    if (count === 0) {
-      listContainer.innerHTML = `<p style="color: #94a3b8; font-size: 0.85rem; text-align: center;">Sin jugadores inscritos.</p>`;
+    if (!players || players.length === 0) {
+      listContainer.innerHTML = `<p style="color: #94a3b8; font-size: 0.85rem; text-align: center;">Sin jugadores inscritos en este equipo.</p>`;
       return;
     }
 
     listContainer.innerHTML = players.map(p => `
-      <div class="player-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; background: var(--bg-main, #0f172a); padding: 0.4rem 0.6rem; border-radius: 6px;">
+      <div class="player-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; background: var(--bg-main, #0f172a); padding: 0.5rem 0.75rem; border-radius: 6px;">
         <span><strong>#${escapeHTML(p.number)}</strong> ${escapeHTML(p.name)}</span>
-        <button class="btn btn--sm btn-danger btn-delete-dyn-player" data-id="${p.id}" style="padding: 0.1rem 0.4rem;">✕</button>
+        <button class="btn btn--sm btn-danger btn-delete-dyn-player" data-id="${p.id}" style="padding: 0.2rem 0.5rem;">Eliminar</button>
       </div>
     `).join('');
 
     listContainer.querySelectorAll('.btn-delete-dyn-player').forEach(btn => {
       btn.onclick = async () => {
-        await deletePlayer(btn.dataset.id);
-        await refreshPlayers();
+        if (confirm('¿Eliminar jugador de la plantilla?')) {
+          await deletePlayer(btn.dataset.id);
+          await refreshPlayers();
+        }
       };
     });
   };
+
+  refreshPlayers();
+}
+
+// ==========================================
+// 3. MODAL AGREGAR JUGADOR (FORMULARIO INDEPENDIENTE)
+// ==========================================
+function openAddPlayerModal(teamId, teamName, sportId, onSaveCallback) {
+  document.getElementById('dynamic-add-player-modal')?.remove();
+
+  const maxPlayers = SPORT_ROSTER_LIMITS[sportId] || SPORT_ROSTER_LIMITS.default;
+
+  const modalHTML = `
+    <div id="dynamic-add-player-modal" class="modal-overlay">
+      <div class="modal-card">
+        <h2 class="modal-card__title">Agregar Jugador</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">
+          Equipo: <strong>${escapeHTML(teamName)}</strong>
+        </p>
+
+        <form id="dyn-single-player-form">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-group__label">Nombre Completo *</label>
+            <input type="text" id="dyn-player-name" required placeholder="Ej: Roberto Carlos" class="form-control" style="width: 100%; padding: 0.5rem;" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-group__label">Dorsal / Número *</label>
+            <input type="number" id="dyn-player-number" min="0" max="99" required placeholder="Ej: 10" class="form-control" style="width: 100%; padding: 0.5rem;" />
+          </div>
+
+          <p id="dyn-player-limit-error" style="color: #ef4444; font-size: 0.8rem; margin-bottom: 1rem; display: none;">
+            No se pueden agregar más jugadores. Se ha alcanzado el límite permitido de ${maxPlayers} en este deporte.
+          </p>
+
+          <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="button" id="dyn-add-player-cancel" class="btn btn--secondary">Cancelar</button>
+            <button type="submit" id="dyn-add-player-submit" class="btn btn--primary">Guardar Jugador</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+  const modalEl = document.getElementById('dynamic-add-player-modal');
+  const formEl = document.getElementById('dyn-single-player-form');
+  const errorEl = document.getElementById('dyn-player-limit-error');
+  const submitBtn = document.getElementById('dyn-add-player-submit');
+
+  document.getElementById('dyn-add-player-cancel').onclick = () => modalEl.remove();
+
+  // Validación previa de límites de plantilla antes de permitir el envío
+  getPlayersByTeam(teamId).then(players => {
+    if (players && players.length >= maxPlayers) {
+      submitBtn.disabled = true;
+      errorEl.style.display = 'block';
+    }
+  });
 
   formEl.onsubmit = async (e) => {
     e.preventDefault();
     const currentPlayers = await getPlayersByTeam(teamId);
 
-    if (currentPlayers.length >= maxPlayers) return;
+    if (currentPlayers && currentPlayers.length >= maxPlayers) {
+      errorEl.style.display = 'block';
+      return;
+    }
 
     const name = document.getElementById('dyn-player-name').value.trim();
     const number = document.getElementById('dyn-player-number').value;
 
-    await addPlayer({ teamId, name, number, position: 'Jugador' });
-    formEl.reset();
-    await refreshPlayers();
-  };
+    if (!name || !number) return;
 
-  refreshPlayers();
+    await addPlayer({ teamId, name, number, position: 'Jugador' });
+    modalEl.remove();
+    if (onSaveCallback) onSaveCallback();
+  };
 }
 
 function renderTeamCharts() {

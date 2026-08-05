@@ -1,9 +1,26 @@
-import { getAllLeagues, getActiveLeague, createLeague, setActiveLeague, deleteLeague,updateLeague} from '../db/repositories/leagues.js';
+import { getAllLeagues, getActiveLeague, createLeague, setActiveLeague, deleteLeague, updateLeague } from '../db/repositories/leagues.js';
 import { getTeamsByLeague } from '../db/repositories/teams.js';
 import { getMatchesByLeague } from '../db/repositories/matches.js';
 import { renderLeagueStatsChart } from '../components/statsChart.js';
 import { startQRScanner, stopQRScanner } from '../utils/qr.js';
 import { handleImportData } from '../utils/export-import.js';
+
+// Mapeo para mostrar nombres amigables en las tarjetas visuales
+const SPORT_DISPLAY_NAMES = {
+  futbol_sala: 'Futbolito / Futsal',
+  futbol_campo: 'Fútbol Campo',
+  basketball: 'Baloncesto',
+  baseball: 'Béisbol',
+  kickingball: 'Kickingball',
+  volleyball: 'Voleibol',
+  padel: 'Pádel',
+  ping_pong: 'Ping-Pong',
+  ajedrez: 'Ajedrez'
+};
+
+function getActiveSport() {
+  return localStorage.getItem('active_sport_id') || 'futbol_sala';
+}
 
 function escapeHTML(str) {
   if (!str) return '';
@@ -47,12 +64,15 @@ export async function renderLeaguesView() {
             <div class="form-group">
               <label class="form-group__label">Deporte *</label>
               <select id="league-sport" required class="form-control">
-                <option value="Fútbol">Fútbol</option>
-                <option value="Futbolito / Futsal">Futbolito / Futsal</option>
-                <option value="Baloncesto">Baloncesto</option>
-                <option value="Pádel">Pádel</option>
-                <option value="Ping-Pong">Ping-Pong</option>
-                <option value="Ajedrez">Ajedrez</option>
+                <option value="futbol_sala">Futbolito / Futsal</option>
+                <option value="futbol_campo">Fútbol Campo</option>
+                <option value="basketball">Baloncesto</option>
+                <option value="baseball">Béisbol</option>
+                <option value="kickingball">Kickingball</option>
+                <option value="volleyball">Voleibol</option>
+                <option value="padel">Pádel</option>
+                <option value="ping_pong">Ping-Pong</option>
+                <option value="ajedrez">Ajedrez</option>
               </select>
             </div>
 
@@ -111,12 +131,11 @@ async function renderLeagueChartSection(leagues) {
     statsContainer.innerHTML = '';
     return;
   }
-  // Equipo con mas victorias por liga
-    const leaguesDataWithTopWins = await Promise.all(leagues.map(async (league) => {
+
+  const leaguesDataWithTopWins = await Promise.all(leagues.map(async (league) => {
     const teams = await getTeamsByLeague(league.id);
     const matches = await getMatchesByLeague(league.id);
 
-    // Victorias por equipo en la liga
     const winsMap = {};
     teams.forEach(t => { winsMap[t.id] = 0; });
 
@@ -130,7 +149,6 @@ async function renderLeagueChartSection(leagues) {
       }
     });
 
-    // Equipo con mayor numero de victorias
     let topTeamName = 'Sin datos';
     let maxWins = 0;
 
@@ -184,7 +202,9 @@ async function renderLeaguesCards(leagues, activeLeague) {
     const matches = await getMatchesByLeague(league.id);
 
     const safeName = escapeHTML(league.name);
-    const safeSport = escapeHTML(league.sport || 'Fútbol');
+    // Traducción del identificador interno al nombre amigable del deporte
+    const displaySportName = SPORT_DISPLAY_NAMES[league.sport] || league.sport || 'Fútbol';
+    const safeSport = escapeHTML(displaySportName);
     const safeSeason = escapeHTML(league.season || '2026');
     const safeMode = escapeHTML(league.mode);
     const safeDescription = escapeHTML(league.description);
@@ -240,6 +260,10 @@ function setupModalEvents(leagues) {
     form.reset();
     document.getElementById('league-id').value = '';
     modalTitle.textContent = 'Crear Nueva Liga';
+    
+    // Auto-seleccionar el deporte activo actual en el desplegable
+    sportSelect.value = getActiveSport();
+
     sportSelect.disabled = false;
     modeSelect.disabled = false;
     modal.classList.remove('is-hidden');
@@ -285,7 +309,7 @@ function setupModalEvents(leagues) {
       const sport = sportSelect.value;
       const mode = modeSelect.value;
 
-      await createLeague({
+      const createdLeague = await createLeague({
         name,
         sport,
         season,
@@ -294,6 +318,12 @@ function setupModalEvents(leagues) {
         description,
         isActive: true
       });
+
+      // Al crear una liga, sincronizamos de inmediato el deporte activo global
+      localStorage.setItem('active_sport_id', sport);
+      if (createdLeague && createdLeague.id) {
+        localStorage.setItem('caimanada_active_league', createdLeague.id);
+      }
     }
 
     modal.classList.add('is-hidden');
@@ -311,8 +341,16 @@ function setupCardEvents(leagues) {
     if (!leagueId) return;
 
     if (target.classList.contains('btn-set-active')) {
+      const league = leagues.find(l => l.id === leagueId);
+
       await setActiveLeague(leagueId);
       localStorage.setItem('caimanada_active_league', leagueId);
+
+      // Sincronizar deporte activo global al activar una liga
+      if (league && league.sport) {
+        localStorage.setItem('active_sport_id', league.sport);
+      }
+
       window.location.hash = '#dashboard';
       return;
     }
@@ -344,7 +382,7 @@ function setupCardEvents(leagues) {
     if (target.classList.contains('btn-delete-league')) {
       const league = leagues.find(l => l.id === leagueId);
       const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar la liga "${league.name}"?\n\nESTA ACCIÓN BORRARÁ TODOS SUS EQUIPOS Y PARTIDOS ASOCIADOS.`);
-      
+
       if (!confirmDelete) return;
 
       await deleteLeague(leagueId);
@@ -353,8 +391,10 @@ function setupCardEvents(leagues) {
       if (remainingLeagues.length > 0) {
         const hasActive = remainingLeagues.some(l => l.isActive);
         if (!hasActive) {
-          await setActiveLeague(remainingLeagues[0].id);
-          localStorage.setItem('caimanada_active_league', remainingLeagues[0].id);
+          const nextLeague = remainingLeagues[0];
+          await setActiveLeague(nextLeague.id);
+          localStorage.setItem('caimanada_active_league', nextLeague.id);
+          localStorage.setItem('active_sport_id', nextLeague.sport || 'futbol_sala');
         }
       } else {
         localStorage.removeItem('caimanada_active_league');
