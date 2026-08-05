@@ -1,13 +1,7 @@
-import { 
-  getAllLeagues, 
-  getActiveLeague, 
-  createLeague, 
-  setActiveLeague, 
-  deleteLeague,
-  updateLeague
-} from '../db/repositories/leagues.js';
+import { getAllLeagues, getActiveLeague, createLeague, setActiveLeague, deleteLeague,updateLeague} from '../db/repositories/leagues.js';
 import { getTeamsByLeague } from '../db/repositories/teams.js';
 import { getMatchesByLeague } from '../db/repositories/matches.js';
+import { renderLeagueStatsChart } from '../components/statsChart.js';
 
 function escapeHTML(str) {
   if (!str) return '';
@@ -97,10 +91,46 @@ export async function renderLeaguesView() {
 
     <!-- Grilla de Ligas -->
     <div id="leagues-grid" class="leagues-grid"></div>
+
+    <!-- Contenedor del Gráfico de Estadísticas -->
+    <div id="league-stats-container" style="margin-top: 2rem;"></div>
   `;
 
   await renderLeaguesCards(leagues, activeLeague);
+  await renderLeagueChartSection(leagues);
   setupModalEvents(leagues);
+}
+
+async function renderLeagueChartSection(leagues) {
+  const statsContainer = document.getElementById('league-stats-container');
+  if (!statsContainer) return;
+
+  if (leagues.length === 0) {
+    statsContainer.innerHTML = '';
+    return;
+  }
+
+  // Obtenemos la cantidad de equipos por cada liga para pasarlo al gráfico
+  const leaguesDataWithCounts = await Promise.all(leagues.map(async (league) => {
+    const teams = await getTeamsByLeague(league.id);
+    return {
+      ...league,
+      teamsCount: teams.length
+    };
+  }));
+
+  statsContainer.innerHTML = `
+    <article class="info-card">
+      <header class="info-card__header">
+        <h3 class="info-card__label" style="margin-bottom: 1rem;">Distribución de Equipos por Liga</h3>
+      </header>
+      <div class="chart-wrapper" style="position: relative; height: 280px; width: 100%;">
+        <canvas id="canvas-league-stats"></canvas>
+      </div>
+    </article>
+  `;
+
+  renderLeagueStatsChart('canvas-league-stats', leaguesDataWithCounts);
 }
 
 async function renderLeaguesCards(leagues, activeLeague) {
@@ -214,11 +244,9 @@ function setupModalEvents(leagues) {
           description
         };
 
-        // Usa updateLeague del repositorio en lugar de la transacción directa
         if (typeof updateLeague === 'function') {
           await updateLeague(updatedData);
         } else {
-          // Fallback en caso de que no exista export explícito de update
           await createLeague(updatedData);
         }
       }
