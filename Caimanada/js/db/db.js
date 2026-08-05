@@ -28,6 +28,10 @@ export function openDB() {
         const matchesStore = db.createObjectStore('matches', { keyPath: 'id' });
         matchesStore.createIndex('leagueId', 'leagueId', { unique: false });
       }
+        if (!db.objectStoreNames.contains('players')) {
+        const playersStore = db.createObjectStore('players', { keyPath: 'id' });
+        playersStore.createIndex('teamId', 'teamId', { unique: false });
+      }
     };
 
     request.onsuccess = (event) => {

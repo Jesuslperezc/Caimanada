@@ -2,29 +2,37 @@ import { executeTransaction } from '../db.js';
 
 const STORE_NAME = 'teams';
 
+// Obtener equipos asociados a un deporte en específico
+export async function getTeamsBySport(sportId) {
+  return executeTransaction(STORE_NAME, 'readonly', (store) => {
+    return new Promise((resolve, reject) => {
+      // Si tienes un índice por sportId configurado en IndexedDB
+      if (store.indexNames.contains('sportId')) {
+        const index = store.index('sportId');
+        const request = index.getAll(sportId);
+        
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = (e) => reject(e.target.error);
+      } else {
+        // Fallback: Traer todos los registros y filtrar en memoria
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const allTeams = request.result || [];
+          const filtered = allTeams.filter(t => t.sportId === sportId);
+          resolve(filtered);
+        };
+        
+        request.onerror = (e) => reject(e.target.error);
+      }
+    });
+  });
+}
 export async function getTeamsByLeague(leagueId) {
   return executeTransaction(STORE_NAME, 'readonly', (store) => {
     const index = store.index('leagueId');
     return index.getAll(leagueId);
   });
-}
-
-export async function getAllUniqueClubs() {
-  const allTeams = await executeTransaction(STORE_NAME, 'readonly', (store) => store.getAll());
-  const uniqueClubsMap = new Map();
-
-  allTeams.forEach(team => {
-    if (team.clubId && !uniqueClubsMap.has(team.clubId)) {
-      uniqueClubsMap.set(team.clubId, {
-        clubId: team.clubId,
-        name: team.name,
-        delegate: team.delegate || '',
-        phone: team.phone || ''
-      });
-    }
-  });
-
-  return Array.from(uniqueClubsMap.values());
 }
 
 export async function addTeam(teamData) {
@@ -33,7 +41,8 @@ export async function addTeam(teamData) {
 
   const newTeam = {
     id: `team_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    leagueId: teamData.leagueId,
+    sportId: teamData.sportId || 'futbol_sala', // Asocia el equipo al deporte global
+    leagueId: teamData.leagueId || null,        // Opcional: Puede ser null hasta que se inscriba mediante QR/Torneo
     clubId: teamData.clubId || `club_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     name: teamData.name,
     delegate: teamData.delegate || '',
@@ -57,7 +66,6 @@ export async function addTeam(teamData) {
 }
 
 export async function updateTeam(team) {
-  // Recalcular siempre la diferencia de goles al actualizar
   if (team.stats) {
     team.stats.df = (Number(team.stats.gf) || 0) - (Number(team.stats.gc) || 0);
   }
@@ -66,28 +74,4 @@ export async function updateTeam(team) {
 
 export async function deleteTeam(teamId) {
   return executeTransaction(STORE_NAME, 'readwrite', (store) => store.delete(teamId));
-}
-
-export async function bulkAddTeams(teamsList) {
-  return executeTransaction(STORE_NAME, 'readwrite', (store) => {
-    teamsList.forEach(teamData => {
-      const gf = Number(teamData.stats?.gf) || 0;
-      const gc = Number(teamData.stats?.gc) || 0;
-
-      const team = {
-        id: `team_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        leagueId: teamData.leagueId,
-        clubId: teamData.clubId || `club_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        name: teamData.name,
-        delegate: teamData.delegate || '',
-        phone: teamData.phone || '',
-        players: teamData.players || [],
-        stats: {
-          pj: 0, pg: 0, pe: 0, pp: 0, gf: gf, gc: gc, df: gf - gc, pts: 0
-        },
-        createdAt: new Date().toISOString()
-      };
-      store.add(team);
-    });
-  });
 }

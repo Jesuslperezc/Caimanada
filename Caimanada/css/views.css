@@ -370,3 +370,133 @@
   color: #64748b;
   margin-top: 0.25rem;
 }
+
+
+
+/* Layout y Tarjetas */
+.teams-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 640px) {
+  .teams-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+.team-card {
+  background: var(--bg-card, #1e293b);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.info-card__header {
+  margin-bottom: 0.75rem;
+}
+
+.info-card__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #94a3b8);
+}
+
+.info-card__highlight {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main, #f8fafc);
+  margin-top: 0.25rem;
+}
+
+.info-card__subtext {
+  font-size: 0.875rem;
+  color: var(--text-muted, #cbd5e1);
+  margin-bottom: 0.25rem;
+}
+
+.card-divider {
+  border: 0;
+  border-top: 1px solid var(--border-card, #334155);
+  margin: 0.75rem 0;
+}
+
+/* Métricas del Equipo */
+.team-stats-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  text-align: center;
+  font-size: 0.85rem;
+  background: var(--bg-main, #0f172a);
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-card, #334155);
+  color: var(--text-main, #f8fafc);
+}
+
+/* Gráfico Chart.js */
+.team-chart-container {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.team-chart-canvas {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Acciones */
+.info-card__footer {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.info-card__footer .btn {
+  flex: 1;
+}
+/* Contenedor de acciones del buscador */
+.teams-actions {
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+/* Input de Búsqueda */
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  color: var(--text-main, #f8fafc);
+  background-color: var(--bg-card, #1e293b);
+  border: 1px solid var(--border-card, #334155);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input::placeholder {
+  color: var(--text-muted, #94a3b8);
+}
+
+.form-input:focus {
+  border-color: var(--accent-primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Ajustes adicionales de limpieza de input tipo search */
+.form-input::-webkit-search-cancel-button {
+  cursor: pointer;
+  filter: invert(0.8);
+}

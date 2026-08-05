@@ -2,6 +2,8 @@ import { getAllLeagues, getActiveLeague, createLeague, setActiveLeague, deleteLe
 import { getTeamsByLeague } from '../db/repositories/teams.js';
 import { getMatchesByLeague } from '../db/repositories/matches.js';
 import { renderLeagueStatsChart } from '../components/statsChart.js';
+import { startQRScanner, stopQRScanner } from '../utils/qr.js';
+import { handleImportData } from '../utils/export-import.js';
 
 function escapeHTML(str) {
   if (!str) return '';
