@@ -30,52 +30,65 @@ export function getPositionsForSport(sportId) {
   return SPORT_POSITIONS[sportId] || ['Jugador'];
 }
 
-// Configuración por deporte (ACTUALIZADA CON REGLAS DE INTERFAZ)
+// Configuración por deporte (CON PUNTUACIÓN REAL)
 export const SPORT_TIMER_CONFIG = {
   futbol_sala: {
     periods: 2, periodDuration: 20 * 60, breakDuration: 10 * 60, 
     hasClock: true, periodNames: ['1er Tiempo', '2do Tiempo'],
-    hasCards: true, pointsLabel: 'Gol' 
+    hasCards: true, startersCount: 5,
+    scoringOptions: [{ label: 'Gol', value: 1 }]
   },
   futbol_campo: {
     periods: 2, periodDuration: 45 * 60, breakDuration: 15 * 60, 
     hasClock: true, periodNames: ['1er Tiempo', '2do Tiempo'],
-    hasCards: true, pointsLabel: 'Gol'
+    hasCards: true, startersCount: 11,
+    scoringOptions: [{ label: 'Gol', value: 1 }]
   },
   basketball: {
     periods: 4, periodDuration: 10 * 60, breakDuration: 2 * 60, breakDurationLong: 15 * 60,
     hasClock: true, periodNames: ['1er Cuarto', '2do Cuarto', '3er Cuarto', '4to Cuarto'],
-    hasCards: true, pointsLabel: 'Canasta'
+    hasCards: false, startersCount: 5,
+    scoringOptions: [
+      { label: 'Tiro Libre (1)', value: 1 },
+      { label: 'Canasta (2)', value: 2 },
+      { label: 'Triple (3)', value: 3 }
+    ]
   },
   volleyball: {
     periods: 5, periodDuration: 0, breakDuration: 3 * 60,
     hasClock: false, periodNames: ['Set 1', 'Set 2', 'Set 3', 'Set 4', 'Set 5'],
-    hasCards: false, pointsLabel: 'Punto'
+    hasCards: false, startersCount: 6,
+    scoringOptions: [{ label: 'Punto', value: 1 }]
   },
   padel: {
     periods: 3, periodDuration: 0, breakDuration: 0, 
     hasClock: false, periodNames: ['1er Set', '2do Set', '3er Set'],
-    hasCards: false, pointsLabel: 'Punto'
+    hasCards: false, startersCount: 2,
+    scoringOptions: [{ label: 'Punto', value: 1 }]
   },
   ping_pong: {
     periods: 5, periodDuration: 0, breakDuration: 1 * 60,
     hasClock: false, periodNames: ['1er Juego', '2do Juego', '3er Juego', '4er Juego', '5er Juego'],
-    hasCards: false, pointsLabel: 'Punto'
+    hasCards: false, startersCount: 1,
+    scoringOptions: [{ label: 'Punto', value: 1 }]
   },
   ajedrez: {
     periods: 1, periodDuration: 0, breakDuration: 0, 
     hasClock: false, periodNames: ['Partida'],
-    hasCards: false, pointsLabel: 'Victoria'
+    hasCards: false, startersCount: 1,
+    scoringOptions: [{ label: 'Victoria', value: 1 }]
   },
   baseball: {
     periods: 9, periodDuration: 0, breakDuration: 0, 
     hasClock: false, periodNames: ['Inning 1', 'Inning 2', 'Inning 3', 'Inning 4', 'Inning 5', 'Inning 6', 'Inning 7', 'Inning 8', 'Inning 9'],
-    hasCards: false, pointsLabel: 'Carrera'
+    hasCards: false, startersCount: 9,
+    scoringOptions: [{ label: 'Carrera', value: 1 }]
   },
   kickingball: {
     periods: 7, periodDuration: 0, breakDuration: 0, 
     hasClock: false, periodNames: ['Inning 1', 'Inning 2', 'Inning 3', 'Inning 4', 'Inning 5', 'Inning 6', 'Inning 7'],
-    hasCards: false, pointsLabel: 'Carrera'
+    hasCards: false, startersCount: 7,
+    scoringOptions: [{ label: 'Carrera', value: 1 }]
   }
 };
 

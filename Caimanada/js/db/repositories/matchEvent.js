@@ -1,5 +1,3 @@
-// js/db/repositories/matchEvent.js
-
 import { executeTransaction } from '../db.js'; 
 
 const STORE_NAME = 'events';
@@ -7,27 +5,31 @@ const STORE_NAME = 'events';
 const EVENT_TYPES = {
     POINT: 'point',
     WARNING: 'warning',
-    EXPULSION: 'expulsion'
+    EXPULSION: 'expulsion',
+    SUBSTITUTION: 'substitution' 
 };
 
 const MatchEventRepository = {
-    /**
-     * Crea un nuevo evento en la base de datos.
-     */
-       async addEvent(eventData) {
-        if (!eventData.matchId || !eventData.playerId || !eventData.teamId) {
-            throw new Error("Faltan campos obligatorios (matchId, teamId, playerId)");
+    // Crea un nuevo evento en la base de datos
+    async addEvent(eventData) {
+
+        if (!eventData.matchId) {
+            throw new Error("Faltan campos obligatorios (matchId)");
         }
 
         return executeTransaction(STORE_NAME, 'readwrite', (tx) => {
             const store = tx.objectStore(STORE_NAME);
             return store.add({
-                id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, // <--- ID AÑADIDO
+                id: eventData.id || `event_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
                 matchId: eventData.matchId,
-                teamId: eventData.teamId,
-                playerId: eventData.playerId,
+                teamId: eventData.teamId || null,
+                playerId: eventData.playerId || null,
                 type: eventData.type || EVENT_TYPES.POINT,
                 minute: eventData.minute || null,
+                pointsValue: eventData.pointsValue || null,
+                outPlayerId: eventData.outPlayerId || null,
+                outPlayerName: eventData.outPlayerName || null,
+                outPlayerNumber: eventData.outPlayerNumber || null,
                 createdAt: new Date().toISOString()
             });
         });
@@ -38,19 +40,22 @@ const MatchEventRepository = {
         
         const store = tx.objectStore(STORE_NAME);
         events.forEach(event => {
-            if (!event.matchId || !event.playerId) {
-                throw new Error("Evento inválido en la transacción masiva");
+            if (!event.matchId) {
+                throw new Error("Evento inválido en la transacción masiva: Falta matchId");
             }
-            // Nos aseguramos de que el evento tenga ID antes de agregarlo
+            
             if (!event.id) {
                 event.id = `event_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
             }
-            store.add(event);
+            
+            const cleanEvent = { ...event };
+            delete cleanEvent._isPlaying; 
+
+            store.add(cleanEvent);
         });
     },
-    /**
-     * Obtiene todos los eventos de un partido específico.
-     */
+
+    //Obtiene todos los eventos de un partido específico
     async getEventsByMatch(matchId) {
         const events = await executeTransaction(STORE_NAME, 'readonly', (tx) => {
             const store = tx.objectStore(STORE_NAME);
@@ -66,9 +71,7 @@ const MatchEventRepository = {
         });
     },
 
-    /**
-     * Obtiene los eventos de tipo 'punto' de un jugador.
-     */
+    //Obtiene los eventos de tipo punto de un jugador
     async getScoringEventsByPlayer(playerId) {
         const events = await executeTransaction(STORE_NAME, 'readonly', (tx) => {
             const store = tx.objectStore(STORE_NAME);
@@ -79,9 +82,7 @@ const MatchEventRepository = {
         return events.filter(e => e.type === EVENT_TYPES.POINT);
     },
 
-    /**
-     * Elimina un evento individual por su ID.
-     */
+    // Elimina un evento individual por su ID
     async deleteEvent(eventId) {
         return executeTransaction(STORE_NAME, 'readwrite', (tx) => {
             const store = tx.objectStore(STORE_NAME);
@@ -89,9 +90,7 @@ const MatchEventRepository = {
         });
     },
 
-    /**
-     * Elimina todos los eventos de un partido.
-     */
+    // Elimina todos los eventos de un partido
     async deleteEventsByMatch(matchId) {
         return executeTransaction(STORE_NAME, 'readwrite', (tx) => {
             const store = tx.objectStore(STORE_NAME);
@@ -105,8 +104,6 @@ const MatchEventRepository = {
                     cursor.continue();
                 }
             };
-            // No retornamos el cursorReq porque no nos interesa su resultado,
-            // solo que la transacción se complete.
             return null; 
         });
     }

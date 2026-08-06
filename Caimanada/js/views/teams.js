@@ -191,7 +191,9 @@ export async function renderTeamsView() {
       }
 
       if (btn.classList.contains('btn-join-league')) {
-        openLinkLeagueModal(safeId, safeName, activeSportId, async () => { await renderTeamsView(); });
+        const teamData = teamsData.find(t => t.id === safeId);
+        const teamSport = teamData ? teamData.sportId : activeSportId;
+        openLinkLeagueModal(safeId, safeName, teamSport, async () => { await renderTeamsView(); });
       }
 
       if (btn.classList.contains('btn-leave-league')) {
