@@ -1,6 +1,5 @@
-// db.js (o como lo hayas llamado)
 const DB_NAME = 'caimanada_db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbInstance = null;
 

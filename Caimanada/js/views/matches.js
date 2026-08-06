@@ -1,10 +1,10 @@
-// views/matches.js
 import { getActiveLeague } from '../db/repositories/leagues.js';
 import { getMatchesByLeague, updateMatch, deleteMatch } from '../db/repositories/matches.js';
 import { getTeamsByLeague } from '../db/repositories/teams.js';
 import { getPlayersByTeam } from '../db/repositories/players.js';
 import { calculateStandings } from '../utils/statsCalculator.js';
 import { MatchChronometer } from '../utils/match-chronometer.js';
+import { getTimerConfig, getMaxPlayersForSport } from '../utils/sport-terms.js';
 import { executeTransaction } from '../db/db.js';
 import { MatchEventRepository } from '../db/repositories/matchEvent.js';
 import { AlertService } from '../components/alert.js';
@@ -145,6 +145,8 @@ function renderMatchesList(matches, teamsMap, league) {
   matches.sort((a, b) => new Date(a.date) - new Date(b.date));
 
   grid.innerHTML = matches.map(match => {
+    // NUEVO: Detectar si es un partido por definir (Eliminación directa)
+    const isTBD = match.homeTeamId === 'TBD' || match.awayTeamId === 'TBD';
     const homeName = escapeHTML(teamsMap[match.homeTeamId]?.name || 'TBD');
     const awayName = escapeHTML(teamsMap[match.awayTeamId]?.name || 'TBD');
     const isPending = match.status === 'pending';
@@ -166,23 +168,28 @@ function renderMatchesList(matches, teamsMap, league) {
             <span>🕐 ${timeFormatted}</span>
           </div>
           <div class="match-card__actions">
-            ${isPending ? `
+            ${isPending && !isTBD ? `
               <button class="btn btn--secondary btn--sm btn-edit-match" data-id="${match.id}" title="Editar fecha">✏️</button>
               <button class="btn btn--danger btn--sm btn-delete-match" data-id="${match.id}" title="Eliminar partido">🗑️</button>
             ` : ''}
             ${isCompleted ? '<span style="font-size:0.8rem; color:#10b981; font-weight:bold;">FINALIZADO</span>' : ''}
+            ${isTBD ? '<span style="font-size:0.8rem; color:#f59e0b; font-weight:bold;">BLOQUEADO</span>' : ''}
           </div>
         </div>
         
         <div class="match-card__body">
-          <span class="match-card__team match-card__team--home">${homeName}</span>
+          <!-- NUEVO: Clase 'match-card__team--tbd' si está pendiente de definir -->
+          <span class="match-card__team match-card__team--home ${isTBD ? 'match-card__team--tbd' : ''}">${homeName}</span>
           
-          ${isPending 
+          <!-- NUEVO: Solo se puede jugar si NO es TBD -->
+          ${isPending && !isTBD 
             ? `<div class="match-card__score match-card__score--active" onclick="window.openLiveMatch('${match.id}', '${league.id}', '${league.sport}')">VS</div>`
-            : `<div class="match-card__score match-card__score--finished">${match.scoreHome ?? 0} - ${match.scoreAway ?? 0}</div>`
+            : isCompleted 
+              ? `<div class="match-card__score match-card__score--finished">${match.scoreHome ?? 0} - ${match.scoreAway ?? 0}</div>`
+              : `<div class="match-card__score">- - -</div>`
           }
           
-          <span class="match-card__team match-card__team--away">${awayName}</span>
+          <span class="match-card__team match-card__team--away ${isTBD ? 'match-card__team--tbd' : ''}">${awayName}</span>
         </div>
       </article>`;
   }).join('');
@@ -250,66 +257,194 @@ function renderStandingsTable(teams, matches) {
     </div>`;
 }
 
-// --- PARTIDO EN VIVO ---
+// --- PARTIDO EN VIVO DINÁMICO ---
 window.openLiveMatch = async function(matchId, leagueId, sportId) {
-  if (activeChronometer) { AlertService.showError('Ya hay un partido en vivo.'); return; }
+  if (activeChronometer) { 
+    activeChronometer.destroy(); 
+    activeChronometer = null; 
+    document.getElementById('live-match-modal')?.remove();
+  }
+  
   liveMatchEvents = [];
-  const match = (await getMatchesByLeague(leagueId)).find(m => m.id === matchId);
-  const teams = await getTeamsByLeague(leagueId);
-  const homeTeam = teams.find(t => t.id === match.homeTeamId);
-  const awayTeam = teams.find(t => t.id === match.awayTeamId);
-  const homePlayers = await getPlayersByTeam(homeTeam.id);
-  const awayPlayers = await getPlayersByTeam(awayTeam.id);
+  const sportConfig = getTimerConfig(sportId);
 
-  document.body.insertAdjacentHTML('beforeend', `
-    <div id="live-match-modal" class="live-modal">
-      <div class="live-modal__container">
-        <div class="live-modal__period" id="live-period-name">Sin Iniciar</div>
-        <div class="live-modal__scoreboard">
-          <div class="live-modal__team-name live-modal__team-name--left">${escapeHTML(homeTeam.name)}</div>
-          <div class="live-modal__numbers">
-            <span class="live-modal__score-num" id="live-score-home">0</span>
-            <span class="live-modal__dash">-</span>
-            <span class="live-modal__score-num" id="live-score-away">0</span>
+  try {
+    const match = (await getMatchesByLeague(leagueId)).find(m => m.id === matchId);
+    const teams = await getTeamsByLeague(leagueId);
+    const homeTeam = teams.find(t => t.id === match.homeTeamId);
+    const awayTeam = teams.find(t => t.id === match.awayTeamId);
+    
+    if (!homeTeam || !awayTeam) {
+      AlertService.showError('Uno de los equipos ya no existe. Elimina este partido.');
+      return;
+    }
+
+    const homePlayers = await getPlayersByTeam(homeTeam.id);
+    const awayPlayers = await getPlayersByTeam(awayTeam.id);
+
+    // NUEVA REGLA: Validar que tengan jugadores mínimos para jugar
+    // Si el deporte requiere 2 (Pádel), exige 2. Si requiere 25 (Béisbol), exige al menos 2 para no bloquear pruebas.
+    const sportLimit = getMaxPlayersForSport(sportId);
+    const minRequired = Math.min(sportLimit, 2); 
+    
+    if (homePlayers.length < minRequired || awayPlayers.length < minRequired) {
+      AlertService.showError(`Cada equipo debe tener al menos ${minRequired} jugadores registrados para jugar este deporte.`);
+      return;
+    }
+
+    // ... (El HTML del modal se queda exactamente igual, no lo borres, esta función continua igual hasta inicializar el cronómetro) ...
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="live-match-modal" class="live-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; overflow-y: auto; display: flex; justify-content: center; padding: 2rem 1rem;">
+        <div class="live-modal__container" style="width: 100%; max-width: 550px; max-height: 95vh; overflow-y: auto; background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 1.5rem; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        
+          <div id="live-period-name" style="text-align: center; margin-bottom: 1.5rem;">
+            <span style="background: #00A86B; color: #fff; padding: 0.4rem 1.2rem; border-radius: 20px; font-weight: 800; font-size: 0.95rem; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0, 168, 107, 0.3);">${sportConfig.periodNames[0]}</span>
           </div>
-          <div class="live-modal__team-name live-modal__team-name--right">${escapeHTML(awayTeam.name)}</div>
-        </div>
-        <div class="live-modal__clock-container">
-          <div class="live-modal__clock" id="live-clock">00:00</div>
-        </div>
-        <div class="live-modal__controls">
-          <button id="btn-play-pause" class="btn btn--primary" onclick="window.togglePlayPause()">▶ Iniciar</button>
-          <button id="btn-next-period" class="btn btn--secondary" onclick="window.nextPeriod()">⏭ Periodo</button>
-          <button class="btn btn--danger" onclick="window.finishLiveMatch('${matchId}', '${leagueId}')">🛑 Finalizar</button>
-        </div>
-        <div class="live-modal__events-panel">
-          <h3 style="margin-bottom: 1rem; font-size: 0.9rem; color: #fff;">Registrar Evento</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-            <select id="live-team-select" class="form-control" onchange="window.updatePlayerSelect()">
-              <option value="home">${escapeHTML(homeTeam.name)}</option>
-              <option value="away">${escapeHTML(awayTeam.name)}</option>
-            </select>
-            <select id="live-player-select" class="form-control"></select>
+          
+          <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #334155;">
+            <div style="flex: 1; text-align: right;">
+              <div style="font-size: 1.3rem; font-weight: 800; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${escapeHTML(homeTeam.name)}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.3); padding: 10px 25px; border-radius: 12px; border: 1px solid #475569;">
+              <span id="live-score-home" style="font-size: 3.5rem; font-weight: 900; color: #fff; font-family: 'Arial Black', sans-serif; min-width: 60px; text-align: center;">0</span>
+              <span style="font-size: 2rem; color: #64748b; font-weight: bold;">-</span>
+              <span id="live-score-away" style="font-size: 3.5rem; font-weight: 900; color: #fff; font-family: 'Arial Black', sans-serif; min-width: 60px; text-align: center;">0</span>
+            </div>
+            <div style="flex: 1; text-align: left;">
+              <div style="font-size: 1.3rem; font-weight: 800; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${escapeHTML(awayTeam.name)}</div>
+            </div>
           </div>
-          <div style="display: flex; gap: 10px;" id="events-buttons-container">
-            <button class="btn btn--primary" style="flex:1; background: #10b981;" onclick="window.addLiveEvent('point')">⭐ Punto</button>
-            <button class="btn btn--secondary" style="flex:1; background: #eab308; color:#000;" onclick="window.addLiveEvent('warning')">🟨 Amarilla</button>
-            <button class="btn btn--danger" style="flex:1;" onclick="window.addLiveEvent('expulsion')">🟥 Roja</button>
+
+          <div style="text-align: center; margin-bottom: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid #334155;">
+            <div id="live-clock" style="font-size: 4rem; font-weight: 900; font-family: monospace; color: #fff; letter-spacing: 2px;">00:00</div>
+            ${!sportConfig.hasClock ? '<div style="color: #94a3b8; font-size: 0.8rem; margin-top: 0.5rem;">⏱ Tiempo cronometrado (Sin límite)</div>' : ''}
           </div>
-        </div>
-        <div class="live-modal__events-log" id="live-events-log"><p style="color: #64748b; text-align: center;">Sin eventos aún</p></div>
-        <div style="text-align: right; margin-top: 2rem;">
-          <button class="btn btn--secondary" onclick="window.closeLiveMatch()">Cerrar (Cancelar)</button>
+
+          <div class="live-modal__controls">
+            <button id="btn-play-pause" class="btn btn--primary" onclick="window.togglePlayPause()">▶ Iniciar</button>
+            <button id="btn-next-period" class="btn btn--secondary" onclick="window.nextPeriod()">⏭ ${sportConfig.hasClock ? 'Descanso' : 'Siguiente Set'}</button>
+            <button class="btn btn--danger" onclick="window.finishLiveMatch('${matchId}', '${leagueId}')">🛑 Finalizar</button>
+          </div>
+
+          <div class="live-modal__events-panel">
+            <h3 style="margin-bottom: 1rem; font-size: 0.9rem; color: #fff;">Registrar Evento</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+              <select id="live-team-select" class="form-control" onchange="window.updatePlayerSelect()">
+                <option value="home">${escapeHTML(homeTeam.name)}</option>
+                <option value="away">${escapeHTML(awayTeam.name)}</option>
+              </select>
+              <select id="live-player-select" class="form-control"></select>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="events-buttons-container">
+              <button class="btn btn--primary" style="flex:1; background: #10b981; min-width: 100px;" onclick="window.addLiveEvent('point')">⭐ ${sportConfig.pointsLabel}</button>
+              ${sportConfig.hasCards ? `
+              <button class="btn btn--secondary" style="flex:1; background: #eab308; color:#000; min-width: 80px;" onclick="window.addLiveEvent('warning')">🟨 Amarilla</button>
+              <button class="btn btn--danger" style="flex:1; min-width: 80px;" onclick="window.addLiveEvent('expulsion')">🟥 Roja</button>` : ''}
+            </div>
+          </div>
+
+          <div class="live-modal__events-log" id="live-events-log"><p style="color: #64748b; text-align: center;">Sin eventos aún</p></div>
+          <div style="text-align: right; margin-top: 2rem;">
+            <button class="btn btn--secondary" onclick="window.closeLiveMatch()">Cerrar (Cancelar)</button>
+          </div>
         </div>
       </div>
-    </div>
-  `);
+    `);
 
-  window._liveData = { matchId, leagueId, homeTeam, awayTeam, homePlayers, awayPlayers, scoreHome: 0, scoreAway: 0 };
-  window.updatePlayerSelect();
-  activeChronometer = new MatchChronometer(sportId);
-  activeChronometer.onTick = (state) => updateClockUI(state);
-  activeChronometer.onPeriodChange = (state) => updateClockUI(state);
+    window._liveData = { matchId, leagueId, homeTeam, awayTeam, homePlayers, awayPlayers, scoreHome: 0, scoreAway: 0 };
+    window.updatePlayerSelect();
+    
+    activeChronometer = new MatchChronometer(sportId);
+    activeChronometer.onTick = (state) => updateClockUI(state);
+    activeChronometer.onPeriodChange = (state) => updateClockUI(state);
+    if(sportConfig.hasClock) document.getElementById('live-clock').textContent = activeChronometer.formattedTime;
+
+  } catch (error) {
+    console.error('Error al abrir el partido en vivo:', error);
+    if (activeChronometer) { activeChronometer.destroy(); activeChronometer = null; }
+    document.getElementById('live-match-modal')?.remove();
+    AlertService.showError('Ocurrió un error al cargar los datos del partido.');
+  }
+};
+
+// --- FINALIZAR PARTIDO (CON INTEGRIDAD DE ELIMINACIÓN DIRECTA) ---
+window.finishLiveMatch = async function(matchId, leagueId) {
+  if (!activeChronometer) return;
+  
+  const scoreHome = window._liveData.scoreHome;
+  const scoreAway = window._liveData.scoreAway;
+  const eventsToSave = [...liveMatchEvents];
+
+  // 1. VALIDACIÓN DE EMPATE EN ELIMINACIÓN DIRECTA
+  if (scoreHome === scoreAway) {
+    // Si el partido tiene un enlace a una siguiente ronda, es eliminatoria directa
+    const currentMatchData = (await getMatchesByLeague(leagueId)).find(m => m.id === matchId);
+    if (currentMatchData && currentMatchData.winnerGoesToMatchId) {
+      AlertService.showError('En eliminación directa no puede haber empate. Debe haber un ganador.');
+      return; // No destruimos el cronómetro, el usuario debe corregir el marcador
+    }
+  }
+
+  // 2. DETERMINAR GANADOR
+  let winnerTeamId = null;
+  if (scoreHome > scoreAway) winnerTeamId = window._liveData.homeTeam.id;
+  else if (scoreAway > scoreHome) winnerTeamId = window._liveData.awayTeam.id;
+
+  // 3. DESTRUIR CRONÓMETRO Y CERRAR MODAL
+  activeChronometer.pause(); 
+  activeChronometer.destroy(); 
+  activeChronometer = null;
+
+  try {
+    // 4. TRANSACCIÓN DE INTEGRIDAD TOTAL
+    await executeTransaction(['matches', 'events'], 'readwrite', async (tx) => {
+      const matchStore = tx.objectStore('matches');
+      
+      // A. Actualizar partido actual
+      const match = await new Promise((res, rej) => { 
+        const req = matchStore.get(matchId); 
+        req.onsuccess = () => res(req.result); 
+        req.onerror = () => rej(req.error); 
+      });
+      
+      match.status = 'completed'; 
+      match.scoreHome = scoreHome; 
+      match.scoreAway = scoreAway;
+      matchStore.put(match);
+
+      // B. Guardar eventos en Repositories/matchEvent (Usando tu función existente)
+      if (eventsToSave.length > 0) {
+        await MatchEventRepository.addEventsInTransaction(tx, eventsToSave);
+      }
+
+      // C. AVANZAR GANADOR EN ELIMINACIÓN DIRECTA (Sección 4.8.3 del PDF)
+      if (winnerTeamId && match.winnerGoesToMatchId) {
+        const nextMatch = await new Promise((res, rej) => { 
+          const req = matchStore.get(match.winnerGoesToMatchId); 
+          req.onsuccess = () => res(req.result); 
+          req.onerror = () => rej(req.error); 
+        });
+        
+        if (nextMatch) {
+          // Si el slot del partido actual era 'home', el ganador va como local en la siguiente ronda
+          if (match.slot === 'home') {
+            nextMatch.homeTeamId = winnerTeamId;
+          } else if (match.slot === 'away') {
+            nextMatch.awayTeamId = winnerTeamId;
+          }
+          matchStore.put(nextMatch); // Guardar el partido de la siguiente ronda actualizado
+        }
+      }
+    });
+    
+    document.getElementById('live-match-modal')?.remove();
+    AlertService.showChampion('¡Partido Finalizado!', `${scoreHome} - ${scoreAway}`);
+    renderMatchesView(); // Recarga la vista, el partido "BLOQUEADO" ahora mostrará los equipos reales
+    
+  } catch (error) {
+    console.error(error);
+    AlertService.showError('Error crítico al guardar. La transacción fue revertida.');
+  }
 };
 
 window.updatePlayerSelect = function() {
@@ -362,38 +497,16 @@ window.nextPeriod = function() {
   updatePlayPauseBtn();
 };
 
-window.finishLiveMatch = async function(matchId, leagueId) {
-  if (!activeChronometer) return;
-  activeChronometer.pause(); activeChronometer.destroy(); activeChronometer = null;
-  const scoreHome = window._liveData.scoreHome;
-  const scoreAway = window._liveData.scoreAway;
-  const eventsToSave = [...liveMatchEvents];
-
-  try {
-    await executeTransaction(['matches', 'events'], 'readwrite', async (tx) => {
-      const matchStore = tx.objectStore('matches');
-      const match = await new Promise((res, rej) => { const req = matchStore.get(matchId); req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
-      match.status = 'completed'; match.scoreHome = scoreHome; match.scoreAway = scoreAway;
-      matchStore.put(match);
-      if (eventsToSave.length > 0) await MatchEventRepository.addEventsInTransaction(tx, eventsToSave);
-    });
-    document.getElementById('live-match-modal')?.remove();
-    AlertService.showChampion('¡Partido Finalizado!', `${scoreHome} - ${scoreAway}`);
-    renderMatchesView();
-  } catch (error) {
-    console.error(error);
-    AlertService.showError('Error al guardar.');
-  }
-};
-
 window.closeLiveMatch = function() {
   if (activeChronometer) { activeChronometer.destroy(); activeChronometer = null; }
   document.getElementById('live-match-modal')?.remove(); liveMatchEvents = [];
 };
 
 function updateClockUI(state) {
-  document.getElementById('live-clock').textContent = state.formattedTime;
-  document.getElementById('live-period-name').textContent = state.currentPeriodName;
+  const clockEl = document.getElementById('live-clock');
+  if(clockEl) clockEl.textContent = state.formattedTime;
+  const periodEl = document.getElementById('live-period-name');
+  if(periodEl) periodEl.textContent = state.currentPeriodName;
   updatePlayPauseBtn();
 }
 
