@@ -49,16 +49,18 @@ export async function handleImportData(rawData) {
         throw new Error('Información de equipo incompleta en el QR.');
       }
 
+      // El Host recibe los datos y crea el equipo en SU base de datos local
       await addTeam({
         leagueId: payload.leagueId,
+        sportId: payload.sportId || 'futbol_sala', // <--- AÑADIDO PARA QUE SE GUARDE EN EL DEPORTE CORRECTO
         name: payload.name,
-        delegate: payload.delegate || '',
+        delegate: payload.delegate || 'Invitado',
         phone: payload.phone || ''
       });
 
       return {
         success: true,
-        message: `El equipo "${payload.name}" se ha importado correctamente.`
+        message: `El equipo "${payload.name}" se ha importado a tu liga correctamente.`
       };
     }
 
@@ -73,25 +75,20 @@ export async function handleImportData(rawData) {
  */
 export async function exportLeagueToJson(leagueData) {
   try {
-    // 1. Obtenemos todos los hijos de la liga
     const teams = await getTeamsByLeague(leagueData.id);
     
-    // 2. Por cada equipo, obtenemos sus jugadores
     const teamsWithPlayers = await Promise.all(teams.map(async (team) => {
       const players = await getPlayersByTeam(team.id);
       return { ...team, players };
     }));
 
-    // 3. Obtenemos los partidos
     const matches = await getMatchesByLeague(leagueData.id);
 
-    // 4. Por cada partido, obtenemos sus eventos (goles, tarjetas)
     const matchesWithEvents = await Promise.all(matches.map(async (match) => {
       const events = await MatchEventRepository.getEventsByMatch(match.id);
       return { ...match, events };
     }));
 
-    // 5. Construimos el objeto completo de la liga
     const fullLeagueBackup = {
       app: 'CaimanaDa',
       version: '1.0',
@@ -102,7 +99,6 @@ export async function exportLeagueToJson(leagueData) {
       matches: matchesWithEvents
     };
 
-    // 6. Convertimos a texto JSON y forzamos la descarga
     const jsonString = JSON.stringify(fullLeagueBackup, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -146,8 +142,6 @@ export async function importLeagueFromJsonFile(file) {
           season: parsed.league.season,
           role: 'guest'
         });
-        
-      
 
         resolve({ success: true, message: 'Liga importada desde archivo.' });
       } catch (err) {

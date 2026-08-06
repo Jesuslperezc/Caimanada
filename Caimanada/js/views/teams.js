@@ -5,9 +5,8 @@ import { getPlayersByTeam, addPlayer, deletePlayer } from '../db/repositories/pl
 import { calculateStandings } from '../utils/statsCalculator.js';
 import { AlertService } from '../components/alert.js';
 import { getMaxPlayersForSport, getPositionsForSport } from '../utils/sport-terms.js';
-import { startQRScanner, stopQRScanner } from '../utils/qr.js';
+import { startQRScanner, stopQRScanner, buildQRPayload } from '../utils/qr.js';
 import { handleImportData, importLeagueFromJsonFile } from '../utils/export-import.js';
-// 1. IMPORTAMOS LA SESIÓN
 import { getCurrentUser } from '../utils/session.js';
 
 const SPORT_DISPLAY_NAMES = {
@@ -58,11 +57,7 @@ function showConfirmDialog(messageHTML, onConfirmCallback) {
   const modalEl = document.getElementById('dynamic-confirm-modal');
 
   document.getElementById('dyn-confirm-cancel').onclick = () => modalEl.remove();
-
-  modalEl.onclick = (e) => {
-    if (e.target === modalEl) modalEl.remove();
-  };
-
+  modalEl.onclick = (e) => { if (e.target === modalEl) modalEl.remove(); };
   document.getElementById('dyn-confirm-accept').onclick = async () => {
     modalEl.remove();
     if (onConfirmCallback) await onConfirmCallback();
@@ -143,6 +138,8 @@ export async function renderTeamsView() {
                   <button class="btn btn--secondary btn--sm btn-view-roster" data-id="${safeId}" data-name="${safeName}">Plantilla</button>
                   <button class="btn btn--primary btn--sm btn-add-player" data-id="${safeId}" data-name="${safeName}">+ Jugador</button>
                   
+                  <button class="btn btn--secondary btn--sm btn-share-team" data-id="${safeId}" data-name="${safeName}">Compartir QR</button>
+
                   ${!isInActiveLeague ? `<button class="btn btn--secondary btn--sm btn-join-league" data-id="${safeId}" data-name="${safeName}">Vincular</button>` : ''}
                   ${isInActiveLeague ? `<button class="btn btn--danger btn--sm btn-leave-league" data-id="${safeId}" data-name="${safeName}">Desvincular</button>` : ''}
                   
@@ -212,9 +209,17 @@ export async function renderTeamsView() {
           await renderTeamsView();
         });
       }
+
+      if (btn.classList.contains('btn-share-team')) {
+        const team = teamsData.find(t => t.id === safeId);
+        if (team) {
+          openShareTeamModal(team);
+        }
+      }
     };
 
     render(teamsData);
+    setupScanTeamButton(); // <--- ENLAZA EL BOTÓN DE ESCANEAR EQUIPO
 
   } catch (error) {
     console.error('Error al renderizar equipos:', error);
@@ -225,11 +230,9 @@ export async function renderTeamsView() {
   }
 }
 
-// 2. MODIFICAMOS EL MODAL PARA ASIGNAR AL USUARIO COMO DELEGADO
 function openAddTeamModal(defaultSportId, onSaveCallback) {
   document.getElementById('dynamic-team-modal')?.remove();
 
-  // Obtenemos al usuario que inició sesión
   const currentUser = getCurrentUser();
 
   const modalHTML = `
@@ -257,7 +260,6 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
           </div>
           <div class="form-group" style="margin-bottom: 1rem;">
             <label class="form-group__label">Delegado / Capitán</label>
-            <!-- Input bloqueado (readonly) con el nombre del usuario actual -->
             <input 
               type="text" 
               id="dyn-team-delegate" 
@@ -288,7 +290,6 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
     e.preventDefault();
     const name = document.getElementById('dyn-team-name').value.trim();
     const sportId = document.getElementById('dyn-team-sport').value;
-    // Tomamos el valor del input (que ya tiene el nombre del usuario)
     const delegate = document.getElementById('dyn-team-delegate').value.trim();
 
     if (!name) return;
@@ -565,4 +566,115 @@ async function openLinkLeagueModal(teamId, teamName, sportId, onSaveCallback) {
       AlertService.showError(err.message, 'ERROR DE ARCHIVO');
     }
   };
+}
+
+// ==========================================================
+// NUEVAS FUNCIONES PARA EL FLUJO P2P (COMPARTIR Y ESCANEAR)
+// ==========================================================
+
+async function openShareTeamModal(teamData) {
+  document.getElementById('dynamic-share-team-modal')?.remove();
+
+  const activeSportId = getActiveSport();
+
+  const modalHTML = `
+    <div id="dynamic-share-team-modal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 420px;">
+        <h2 class="modal-card__title">Compartir Equipo</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">
+          Muestra este código QR al Organizador de la liga para que tu equipo quede registrado en su dispositivo.
+        </p>
+
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 1rem;">
+          <div id="qr-team-display" style="padding: 1rem; background: #fff; border-radius: 8px;">
+            <img id="qr-team-image" src="" alt="Código QR de Equipo" style="width: 220px; height: 220px;" />
+          </div>
+          <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem; font-weight: bold;">Equipo: ${escapeHTML(teamData.name)}</p>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 2rem; text-align: right;">
+          <button type="button" id="dyn-share-team-cancel" class="btn btn--secondary">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modalEl = document.getElementById('dynamic-share-team-modal');
+
+  document.getElementById('dyn-share-team-cancel').onclick = () => modalEl.remove();
+
+  const qrPayload = buildQRPayload('IMPORT_TEAM', {
+    name: teamData.name,
+    leagueId: teamData.leagueId, 
+    delegate: teamData.delegate,
+    sportId: activeSportId
+  });
+
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
+  document.getElementById('qr-team-image').src = qrApiUrl;
+}
+
+export async function setupScanTeamButton() {
+  const addBtn = document.getElementById('btn-add-team');
+  let scanBtn = document.getElementById('btn-scan-team');
+  
+  // Inyectamos el botón al lado de "Registrar Equipo" si no existe
+  if (addBtn && !scanBtn) {
+    scanBtn = document.createElement('button');
+    scanBtn.id = 'btn-scan-team';
+    scanBtn.className = 'btn btn--secondary';
+    scanBtn.innerHTML = '📷 Escanear Equipo';
+    scanBtn.style.marginLeft = '0.5rem';
+    addBtn.parentNode.insertBefore(scanBtn, addBtn.nextSibling);
+  }
+
+  if (scanBtn) {
+    scanBtn.onclick = () => {
+      document.getElementById('dynamic-scan-team-modal')?.remove();
+
+      const modalHTML = `
+        <div id="dynamic-scan-team-modal" class="modal-overlay">
+          <div class="modal-card" style="max-width: 420px;">
+            <h2 class="modal-card__title">Escanear Equipo Invitado</h2>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">
+              Pide al capitán que abra el QR de su equipo y apunta la cámara aquí.
+            </p>
+            <div id="qr-team-video-container" style="border-radius: 8px; overflow: hidden; margin-bottom: 1rem;">
+              <video id="qr-team-video" style="width: 100%; height: auto;" autoplay muted playsinline></video>
+            </div>
+            <div class="modal-actions" style="text-align: right;">
+              <button type="button" id="dyn-scan-team-cancel" class="btn btn--secondary">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      const modalEl = document.getElementById('dynamic-scan-team-modal');
+      const videoEl = document.getElementById('qr-team-video');
+
+      document.getElementById('dyn-scan-team-cancel').onclick = () => {
+        stopQRScanner();
+        modalEl.remove();
+      };
+
+      startQRScanner(videoEl, async (rawData) => {
+        try {
+          const result = await handleImportData(rawData);
+          if (result.success) {
+            AlertService.showChampion(result.message, '¡EQUIPO REGISTRADO!');
+            stopQRScanner();
+            modalEl.remove();
+            await renderTeamsView(); 
+          }
+        } catch (err) {
+          AlertService.showError(err.message, 'ERROR DE QR');
+          stopQRScanner();
+        }
+      }, (err) => {
+        AlertService.showError('No se pudo acceder a la cámara.', 'ERROR DE CÁMARA');
+      });
+    };
+  }
 }

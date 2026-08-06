@@ -2,8 +2,8 @@ import { getAllLeagues, getActiveLeague, createLeague, setActiveLeague, deleteLe
 import { getTeamsByLeague } from '../db/repositories/teams.js';
 import { getPlayersByTeam } from '../db/repositories/players.js'; 
 import { MatchEventRepository } from '../db/repositories/matchEvent.js'; 
-import { getMatchesByLeague, bulkInsertFullMatches } from '../db/repositories/matches.js'; // <--- NUEVO IMPORT
-import { generateLeagueFixture, generateEliminationBracket } from '../utils/fixtureGenerator.js'; // <--- NUEVO IMPORT
+import { getMatchesByLeague, bulkInsertFullMatches } from '../db/repositories/matches.js';
+import { generateLeagueFixture, generateEliminationBracket } from '../utils/fixtureGenerator.js';
 import { renderLeagueStatsChart } from '../components/statsChart.js';
 import { startQRScanner, stopQRScanner, buildQRPayload } from '../utils/qr.js';
 import { handleImportData, exportLeagueToJson } from '../utils/export-import.js';
@@ -245,7 +245,6 @@ async function renderLeaguesCards(leagues, activeLeague) {
             ${league.role === 'guest' ? '' : `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">Editar</button>`}
             <button class="btn btn--secondary btn--sm btn-export-league" data-id="${safeId}">Exportar</button>
             
-            <!-- ⚡ NUEVO BOTÓN PARA GENERAR FIXTURE -->
             ${league.role === 'guest' ? '' : `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">⚡ Fixture</button>`}
 
             <button class="btn btn--sm btn-danger btn-delete-league" data-id="${safeId}">Borrar</button>
@@ -351,12 +350,11 @@ function setupCardEvents(leagues) {
       return;
     }
 
-    // EVENTO DEL NUEVO BOTÓN
     if (target.classList.contains('btn-gen-fixture')) {
       const league = leagues.find(l => l.id === leagueId);
       const mode = target.dataset.mode;
-      const currentTeamsCount = parseInt(target.dataset.teams);
-      handleGenerateFixture(league, mode);      return;
+      handleGenerateFixture(league, mode);      
+      return;
     }
 
     if (target.classList.contains('btn-edit-league')) {
@@ -470,7 +468,7 @@ async function openShareLeagueModal(leagueData) {
 
           <div id="qr-display-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
             <img id="qr-image" src="" alt="Código QR de Liga" style="width: 220px; height: 220px;" />
-            <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para unirte a "${escapeHTML(leagueData.name)}"</p>
+            <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para unirtes a "${escapeHTML(leagueData.name)}"</p>
           </div>
 
         </div>
@@ -565,8 +563,6 @@ async function prepareLeagueJsonString(leagueData) {
   }, null, 2);
 }
 
-
-// LÓGICA PARA GENERAR EL FIXTURE
 async function handleGenerateFixture(league, mode) {
   const isLiga = mode.includes('Liga');
   const isIdaYVuelta = mode.includes('Ida y vuelta');
@@ -578,11 +574,9 @@ async function handleGenerateFixture(league, mode) {
     else if (mode.includes('16')) requiredTeams = 16;
   }
 
-  // OBTENER LOS EQUIPOS DIRECTAMENTE DE LA BD EN ESTE EXACTO SEGUNDO
   const teams = await getTeamsByLeague(league.id);
   const realTeamCount = teams.length;
 
-  // VALIDACIONES ESTRICTAS
   if (isLiga && realTeamCount < 2) {
     AlertService.showError('Se necesitan al menos 2 equipos para generar una Liga.');
     return;
@@ -593,7 +587,6 @@ async function handleGenerateFixture(league, mode) {
     return;
   }
 
-  // GENERAR PARTIDOS EN MEMORIA
   let generatedMatches = [];
   if (isLiga) {
     generatedMatches = generateLeagueFixture(league.id, teams, isIdaYVuelta);
@@ -601,27 +594,21 @@ async function handleGenerateFixture(league, mode) {
     generatedMatches = generateEliminationBracket(league.id, teams, requiredTeams);
   }
 
-  // ABRIR MODAL PARA ORGANIZAR FECHAS
   openFixtureConfigModal(generatedMatches, teams);
 }
 
-// ==========================================
-// MODAL PARA EDITAR FECHAS ANTES DE GUARDAR
-// ==========================================
 function openFixtureConfigModal(matches, teamsList) {
   document.getElementById('dynamic-fixture-modal')?.remove();
   
   const teamsObj = Object.fromEntries(teamsList.map(t => [t.id, t.name]));
   
-  // Crear el HTML de la lista de partidos con sus inputs de fecha
   let matchesHTML = '';
   matches.forEach((m, index) => {
     const homeName = m.homeTeamId === 'TBD' ? 'Por definir' : (teamsObj[m.homeTeamId] || 'Eliminado');
     const awayName = m.awayTeamId === 'TBD' ? 'Por definir' : (teamsObj[m.awayTeamId] || 'Eliminado');
     
-    // Formatear fecha para el input
     const d = new Date(m.date);
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); // Ajuste de zona horaria
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); 
     const dateVal = d.toISOString().slice(0, 16);
 
     matchesHTML += `
@@ -634,7 +621,6 @@ function openFixtureConfigModal(matches, teamsList) {
     `;
   });
 
-  // Inyectar el modal en el DOM
   const modalHTML = `
     <div id="dynamic-fixture-modal" class="modal-overlay">
       <div class="modal-card" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
@@ -656,13 +642,10 @@ function openFixtureConfigModal(matches, teamsList) {
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   const modalEl = document.getElementById('dynamic-fixture-modal');
 
-  // Evento para cerrar
   document.getElementById('btn-cancel-fixture').onclick = () => modalEl.remove();
   modalEl.onclick = (e) => { if (e.target === modalEl) modalEl.remove(); };
 
-  // Evento para GUARDAR definitivamente en la Base de Datos
   document.getElementById('btn-save-fixture').onclick = async () => {
-    // 1. Recoger las fechas que editó el usuario
     const dateInputs = document.querySelectorAll('.fixture-date-input');
     dateInputs.forEach(input => {
       const idx = parseInt(input.dataset.index);
@@ -671,12 +654,11 @@ function openFixtureConfigModal(matches, teamsList) {
       }
     });
 
-    // 2. Guardar en IndexedDB
     try {
       await bulkInsertFullMatches(matches);
-      AlertService.showChampion(`¡Se guardaron ${matches.length} partidos exitosamente!`, 'FIXTER LISTO');
+      AlertService.showChampion(`¡Se guardaron ${matches.length} partidos exitosamente!`, 'FIXTURE LISTO');
       modalEl.remove();
-      renderLeaguesView(); // Recargamos para que el contador de partidos en la tarjeta se actualice
+      renderLeaguesView(); 
     } catch (error) {
       console.error('Error guardando fixture:', error);
       AlertService.showError('Ocurrió un error al guardar los partidos en la base de datos.');
