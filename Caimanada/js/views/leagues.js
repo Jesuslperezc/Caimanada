@@ -480,13 +480,23 @@ function openImportLeagueModal() {
     modalEl.remove();
   };
 
-  // 1. Escanear QR
+    // 1. Escanear QR
   document.getElementById('btn-scan-league-qr').onclick = async () => {
     videoContainer.style.display = 'block';
     await startQRScanner(videoEl, async (rawData) => {
       try {
         const result = await handleImportData(rawData);
         if (result.success) {
+          
+          // --- LA MAGIA ESTÁ AQUÍ ---
+          // Si se importó una liga, cambiamos el deporte activo para que sea visible
+          if (result.league && result.league.sport) {
+            localStorage.setItem('active_sport_id', result.league.sport);
+            const sportSelect = document.getElementById('active-sport-selector');
+            if (sportSelect) sportSelect.value = result.league.sport;
+          }
+          // ---------------------------
+
           AlertService.showChampion(result.message || '¡Liga importada/actualizada!', '¡SINCRONIZADO!');
           stopQRScanner();
           modalEl.remove();
@@ -501,7 +511,6 @@ function openImportLeagueModal() {
       AlertService.showError('No se pudo acceder a la cámara. Usa Subir JSON en su lugar.', 'ERROR DE CÁMARA');
     });
   };
-
   // 2. Subir JSON
   document.getElementById('btn-upload-league-json').onclick = () => fileInput.click();
 
