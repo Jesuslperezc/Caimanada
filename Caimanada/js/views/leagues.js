@@ -273,62 +273,64 @@ function setupModalEvents(leagues) {
     modal.classList.add('is-hidden');
   });
 
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+form?.addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-    const id = document.getElementById('league-id').value;
-    const name = document.getElementById('league-name').value.trim();
-    const season = document.getElementById('league-season').value.trim();
-    const durationDays = document.getElementById('league-duration').value;
-    const description = document.getElementById('league-description').value.trim();
+  const id = document.getElementById('league-id').value;
+  const name = document.getElementById('league-name').value.trim();
+  const season = document.getElementById('league-season').value.trim();
+  const durationDays = document.getElementById('league-duration').value;
+  const description = document.getElementById('league-description').value.trim();
 
-    const isDuplicate = leagues.some(l => l.name.toLowerCase() === name.toLowerCase() && l.id !== id);
-    if (isDuplicate) {
-      alert(`Ya existe una liga con el nombre "${name}". Por favor usa otro.`);
-      return;
-    }
+  const isDuplicate = leagues.some(l => l.name.toLowerCase() === name.toLowerCase() && l.id !== id);
+  if (isDuplicate) {
+    alert(`Ya existe una liga con el nombre "${name}". Por favor usa otro.`);
+    return;
+  }
 
-    if (id) {
-      const targetLeague = leagues.find(l => l.id === id);
-      if (targetLeague) {
-        const updatedData = {
-          ...targetLeague,
-          name,
-          season,
-          durationDays: Number(durationDays),
-          description
-        };
-
-        if (typeof updateLeague === 'function') {
-          await updateLeague(updatedData);
-        } else {
-          await createLeague(updatedData);
-        }
-      }
-    } else {
-      const sport = sportSelect.value;
-      const mode = modeSelect.value;
-
-      const createdLeague = await createLeague({
+  if (id) {
+    const targetLeague = leagues.find(l => l.id === id);
+    if (targetLeague) {
+      const updatedData = {
+        ...targetLeague,
         name,
-        sport,
         season,
-        mode,
         durationDays: Number(durationDays),
-        description,
-        isActive: true
-      });
+        description
+      };
 
-      // Al crear una liga, sincronizamos de inmediato el deporte activo global
-      localStorage.setItem('active_sport_id', sport);
-      if (createdLeague && createdLeague.id) {
-        localStorage.setItem('caimanada_active_league', createdLeague.id);
+      if (typeof updateLeague === 'function') {
+        await updateLeague(updatedData);
+      } else {
+        await createLeague(updatedData);
       }
     }
+  } else {
+    const sport = sportSelect.value;
+    const mode = modeSelect.value;
 
-    modal.classList.add('is-hidden');
-    renderLeaguesView();
-  });
+    const createdLeague = await createLeague({
+      name,
+      sport,
+      season,
+      mode,
+      durationDays: Number(durationDays),
+      description,
+      isActive: true
+    });
+
+    localStorage.setItem('active_sport_id', sport);
+    if (createdLeague && createdLeague.id) {
+      localStorage.setItem('caimanada_active_league', createdLeague.id);
+    }
+  }
+
+  // Ocultar modal
+  modal.classList.add('is-hidden');
+
+  // Recargar la vista obteniendo la lista fresca directamente de IndexedDB
+  await renderLeaguesView();
+});
 }
 
 function setupCardEvents(leagues) {

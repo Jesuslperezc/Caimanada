@@ -3,33 +3,41 @@ import { executeTransaction } from '../db.js';
 const STORE_NAME = 'matches';
 
 export async function getMatchesByLeague(leagueId) {
-  const db = await import('../db.js').then(m => m.openDB());
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const index = store.index('leagueId');
-    const request = index.getAll(leagueId);
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+  if (!leagueId) return [];
+  try {
+    const matches = await executeTransaction(STORE_NAME, 'readonly', (store) => {
+      return store.getAll();
+    });
+    
+    if (!Array.isArray(matches)) return [];
+    return matches.filter(m => m.leagueId === leagueId);
+  } catch (error) {
+    console.error('Error al obtener partidos por liga:', error);
+    return [];
+  }
 }
 
 export async function saveMatchResult(matchId, scoreHome, scoreAway) {
   return executeTransaction(STORE_NAME, 'readwrite', (store) => {
-    const getRequest = store.get(matchId);
-    
-    getRequest.onsuccess = () => {
-      const match = getRequest.result;
-      if (!match) return;
+    return new Promise((resolve, reject) => {
+      const getRequest = store.get(matchId);
+      
+      getRequest.onsuccess = () => {
+        const match = getRequest.result;
+        if (!match) return resolve(null);
 
-      match.scoreHome = Number(scoreHome);
-      match.scoreAway = Number(scoreAway);
-      match.status = 'completed';
-      match.updatedAt = new Date().toISOString();
+        match.scoreHome = Number(scoreHome);
+        match.scoreAway = Number(scoreAway);
+        match.status = 'completed';
+        match.updatedAt = new Date().toISOString();
 
-      store.put(match);
-    };
+        const putReq = store.put(match);
+        putReq.onsuccess = () => resolve(match);
+        putReq.onerror = (e) => reject(e.target.error);
+      };
+
+      getRequest.onerror = (e) => reject(e.target.error);
+    });
   });
 }
 

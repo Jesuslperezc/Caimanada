@@ -1,5 +1,5 @@
 const DB_NAME = 'caimanada_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance = null;
 
@@ -19,16 +19,26 @@ export function openDB() {
         leaguesStore.createIndex('isActive', 'isActive', { unique: false });
       }
 
+      let teamsStore;
       if (!db.objectStoreNames.contains('teams')) {
-        const teamsStore = db.createObjectStore('teams', { keyPath: 'id' });
+        teamsStore = db.createObjectStore('teams', { keyPath: 'id' });
+      } else {
+        teamsStore = event.target.transaction.objectStore('teams');
+      }
+
+      if (!teamsStore.indexNames.contains('leagueId')) {
         teamsStore.createIndex('leagueId', 'leagueId', { unique: false });
+      }
+      if (!teamsStore.indexNames.contains('sportId')) {
+        teamsStore.createIndex('sportId', 'sportId', { unique: false });
       }
 
       if (!db.objectStoreNames.contains('matches')) {
         const matchesStore = db.createObjectStore('matches', { keyPath: 'id' });
         matchesStore.createIndex('leagueId', 'leagueId', { unique: false });
       }
-        if (!db.objectStoreNames.contains('players')) {
+
+      if (!db.objectStoreNames.contains('players')) {
         const playersStore = db.createObjectStore('players', { keyPath: 'id' });
         playersStore.createIndex('teamId', 'teamId', { unique: false });
       }
@@ -51,11 +61,38 @@ export async function executeTransaction(storeName, mode, callback) {
     const transaction = db.transaction(storeName, mode);
     const store = transaction.objectStore(storeName);
 
-    const request = callback(store);
+    let callbackResult = null;
 
-    transaction.oncomplete = () => {
-      resolve(request ? request.result : true);
-    };
+    try {
+      callbackResult = callback(store);
+    } catch (err) {
+      return reject(err);
+    }
+
+    // Si el callback devuelve una Promesa
+    if (callbackResult && typeof callbackResult.then === 'function') {
+      callbackResult
+        .then((res) => {
+          transaction.oncomplete = () => resolve(res);
+        })
+        .catch(reject);
+      return;
+    }
+
+    // Si el callback devuelve un IDBRequest directamente
+    if (callbackResult && typeof callbackResult === 'object' && 'onsuccess' in callbackResult) {
+      let requestResult = null;
+      callbackResult.onsuccess = (e) => {
+        requestResult = e.target.result;
+      };
+      transaction.oncomplete = () => {
+        resolve(requestResult);
+      };
+    } else {
+      transaction.oncomplete = () => {
+        resolve(callbackResult ?? true);
+      };
+    }
 
     transaction.onerror = () => {
       reject(transaction.error);

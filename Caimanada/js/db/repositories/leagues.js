@@ -5,11 +5,24 @@ const STORE_NAME = 'leagues';
 export { executeTransaction };
 
 export async function getAllLeagues() {
-  return executeTransaction(STORE_NAME, 'readonly', (store) => store.getAll());
+  try {
+    const result = await executeTransaction(STORE_NAME, 'readonly', (store) => {
+      return new Promise((resolve, reject) => {
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    });
+    return Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error('Error en getAllLeagues:', error);
+    return [];
+  }
 }
 
 export async function getActiveLeague() {
   const allLeagues = await getAllLeagues();
+  if (!Array.isArray(allLeagues) || allLeagues.length === 0) return null;
   return allLeagues.find(league => league.isActive === true) || null;
 }
 
@@ -36,7 +49,13 @@ export async function createLeague(leagueData) {
     isActive: leagueData.isActive ?? isFirstLeague
   };
 
-  await executeTransaction(STORE_NAME, 'readwrite', (store) => store.add(newLeague));
+  await executeTransaction(STORE_NAME, 'readwrite', (store) => {
+    return new Promise((resolve, reject) => {
+      const request = store.add(newLeague);
+      request.onsuccess = () => resolve(newLeague);
+      request.onerror = (e) => reject(e.target.error);
+    });
+  });
 
   if (newLeague.isActive) {
     await setActiveLeague(newLeague.id);
@@ -45,32 +64,47 @@ export async function createLeague(leagueData) {
   return newLeague;
 }
 
-
 export async function updateLeague(leagueData) {
   if (!leagueData || !leagueData.id) return null;
 
   return executeTransaction(STORE_NAME, 'readwrite', (store) => {
-    return store.put(leagueData);
+    return new Promise((resolve, reject) => {
+      const request = store.put(leagueData);
+      request.onsuccess = () => resolve(leagueData);
+      request.onerror = (e) => reject(e.target.error);
+    });
   });
 }
 
 export async function setActiveLeague(leagueId) {
   return executeTransaction(STORE_NAME, 'readwrite', (store) => {
-    const request = store.getAll();
-    
-    request.onsuccess = () => {
-      const leagues = request.result || [];
-      leagues.forEach((league) => {
-        const shouldBeActive = (league.id === leagueId);
-        if (league.isActive !== shouldBeActive) {
-          league.isActive = shouldBeActive;
-          store.put(league); 
-        }
-      });
-    };
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        const leagues = request.result || [];
+        const putPromises = leagues.map((league) => {
+          const shouldBeActive = (league.id === leagueId);
+          if (league.isActive !== shouldBeActive) {
+            league.isActive = shouldBeActive;
+            return store.put(league);
+          }
+          return null;
+        });
+        resolve(putPromises);
+      };
+
+      request.onerror = (e) => reject(e.target.error);
+    });
   });
 }
 
 export async function deleteLeague(leagueId) {
-  return executeTransaction(STORE_NAME, 'readwrite', (store) => store.delete(leagueId));
+  return executeTransaction(STORE_NAME, 'readwrite', (store) => {
+    return new Promise((resolve, reject) => {
+      const request = store.delete(leagueId);
+      request.onsuccess = () => resolve(true);
+      request.onerror = (e) => reject(e.target.error);
+    });
+  });
 }
