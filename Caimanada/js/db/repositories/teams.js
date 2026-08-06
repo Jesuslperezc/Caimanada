@@ -30,7 +30,6 @@ export async function getTeamsByLeague(leagueId) {
     return [];
   }
 }
-
 export async function addTeam(teamData) {
   const newTeam = {
     id: teamData.id || (crypto.randomUUID ? crypto.randomUUID() : `team_${Date.now()}`),
@@ -39,15 +38,20 @@ export async function addTeam(teamData) {
     sportId: teamData.sportId || 'futbol_sala',
     leagueId: teamData.leagueId || null,
     color: teamData.color || '#3b82f6',
-    createdAt: new Date().toISOString()
+    createdAt: teamData.createdAt || new Date().toISOString()
   };
 
   await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
     const store = tx.objectStore(STORE_NAME);
+    if (teamData.id) {
+      return store.put(newTeam);
+    }
     return store.add(newTeam);
   });
   return newTeam;
 }
+
+
 
 export async function updateTeam(teamData) {
   if (!teamData.id) return null;

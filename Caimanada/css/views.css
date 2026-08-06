@@ -416,7 +416,6 @@
     max-height: 85vh;
   }
 }
-
 /* Tarjetas de Ligas Adaptables */
 .league-card {
   border: 1px solid var(--border-card, #334155);
@@ -426,11 +425,12 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  word-break: break-word; /* Previene desbordamiento por textos o IDs largos */
+  word-break: break-word;
+  overflow: hidden; /* Evita que los botones se salgan de la tarjeta */
 }
 
 .league-card--active {
-  border: 2px solid var(--accent-primary, #3b82f6);
+  border: 2px solid var(--accent-primary, #00A86B);
 }
 
 .league-card__meta {
@@ -478,63 +478,70 @@
   font-style: italic;
 }
 
-/* Footer de la tarjeta */
+/* === FOOTER Y BOTONES EN CUADRÍCULA === */
 .league-card__footer {
-  padding-top: 0.85rem;
+  padding-top: 1rem;
   border-top: 1px solid #334155;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.75rem;
-}
-
-@media (min-width: 400px) {
-  .league-card__footer {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-}
-
-.league-card__active-label {
-  color: #3b82f6;
-  font-weight: bold;
-  font-size: 0.85rem;
-  display: inline-block;
-  text-align: center;
-  width: 100%;
-}
-
-@media (min-width: 400px) {
-  .league-card__active-label {
-    width: auto;
-    text-align: left;
-  }
+  margin-top: auto;
 }
 
 .league-card__actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columnas estrictas */
   gap: 0.5rem;
   width: 100%;
 }
 
-@media (min-width: 400px) {
-  .league-card__actions {
-    width: auto;
-  }
-}
-
+/* Estilo base para TODOS los botones y la etiqueta */
 .league-card__actions .btn,
-.league-card__footer .btn-set-active {
-  flex: 1; /* Reparte espacio uniformemente en pantallas chicas */
-  text-align: center;
+.league-card__actions .league-card__active-label {
+  min-width: 0; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0.6rem 0.3rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
-@media (min-width: 400px) {
-  .league-card__actions .btn,
-  .league-card__footer .btn-set-active {
-    flex: initial;
-  }
+/* La etiqueta de Liga Activa ocupará toda la fila de arriba */
+.league-card__actions .league-card__active-label {
+  grid-column: span 2;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-weight: 700;
+}
+
+.league-card__role {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+}
+
+.league-card__role--owner {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.league-card__role--guest {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .btn-danger {
@@ -565,9 +572,6 @@
   color: #64748b;
   margin-top: 0.25rem;
 }
-
-
-
 /* Layout y Tarjetas */
 .teams-grid {
   display: grid;
