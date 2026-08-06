@@ -6,7 +6,8 @@ import { getMatchesByLeague, bulkInsertFullMatches } from '../db/repositories/ma
 import { generateLeagueFixture, generateEliminationBracket } from '../utils/fixtureGenerator.js';
 import { renderLeagueStatsChart } from '../components/statsChart.js';
 import { startQRScanner, stopQRScanner, buildQRPayload } from '../utils/qr.js';
-import { handleImportData, exportLeagueToJson } from '../utils/export-import.js';
+// Añadido importLeagueFromJsonFile a la importación
+import { handleImportData, exportLeagueToJson, importLeagueFromJsonFile } from '../utils/export-import.js';
 import { AlertService } from '../components/alert.js'; 
 import { getMaxPlayersForSport } from '../utils/sport-terms.js';
 
@@ -39,7 +40,10 @@ export async function renderLeaguesView() {
           <h1 class="view-title">Gestión de Ligas</h1>
           <p class="view-subtitle">Crea, administra y activa los torneos de CaimanaDa</p>
         </div>
-        <button id="btn-open-create-modal" class="btn btn--primary">+ Crear Nueva Liga</button>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button id="btn-import-league" class="btn btn--secondary">📥 Importar Liga</button>
+          <button id="btn-open-create-modal" class="btn btn--primary">+ Crear Nueva Liga</button>
+        </div>
       </header>
 
       <div id="league-modal" class="modal-overlay is-hidden">
@@ -100,6 +104,11 @@ export async function renderLeaguesView() {
       <div id="leagues-grid" class="leagues-grid"></div>
       <div id="league-stats-container" style="margin-top: 2rem;"></div>
     `;
+
+    // Evento para el botón de importar liga
+    document.getElementById('btn-import-league')?.addEventListener('click', () => {
+      openImportLeagueModal();
+    });
 
     await renderLeaguesCards(leagues, activeLeague);
     await renderLeagueChartSection(leagues);
@@ -201,7 +210,7 @@ async function renderLeaguesCards(leagues, activeLeague) {
     const meetsTeamRequirements = isLigaMode ? (teams.length >= requiredTeams) : (teams.length === requiredTeams);
     const canExport = meetsTeamRequirements && isComplete;
 
-        let actionButton = '';
+    let actionButton = '';
     if (isGuest) {
       actionButton = `<button class="btn btn--primary btn--sm btn-guest-update" data-id="${safeId}">🔄 Actualizar</button>`;
     } else {
@@ -239,22 +248,20 @@ async function renderLeaguesCards(leagues, activeLeague) {
           ${safeDescription ? `<p class="league-card__description">"${safeDescription}"</p>` : ''}
         </div>
         <footer class="league-card__footer">
-          <div style="width: 100%; margin-bottom: 0.5rem;">
+          <div class="league-card__actions">
             ${isActive 
               ? '<span class="league-card__active-label">✓ LIGA ACTIVA</span>' 
-              : `<button class="btn btn--secondary btn--sm btn-set-active" data-id="${safeId}" style="width:100%; padding: 0.5rem;">Activar Liga</button>`
+              : `<button class="btn btn--secondary btn--sm btn-set-active" data-id="${safeId}">✅ Activar</button>`
             }
-          </div>
-          
-          <div class="league-card__actions">
-            ${!isGuest ? `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">✏️ Editar</button>` : ''}
-            ${!isGuest ? `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">⚡ Fixture</button>` : ''}
             
-            ${!isGuest && !allMatchesPlayed ? `<button class="btn btn--secondary btn--sm btn-import-teams" data-id="${safeId}">📷 Importar</button>` : ''}
+            ${!isGuest ? `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">✏️ Editar</button>` : '<div></div>'}
+            ${!isGuest ? `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">⚡ Fixture</button>` : '<div></div>'}
+            
+            ${!isGuest && !allMatchesPlayed ? `<button class="btn btn--secondary btn--sm btn-import-teams" data-id="${safeId}">📷 Importar</button>` : '<div></div>'}
             ${actionButton}
             
             <button class="btn btn--sm btn-danger btn-delete-league" data-id="${safeId}">🗑️ Borrar</button>
-            ${isGuest ? '<div></div>' : ''} <!-- Div vacío para mantener la cuadrícula alineada si es invitado -->
+            ${isGuest ? '<div></div>' : ''} 
           </div>
         </footer>
       </article>`;
@@ -428,6 +435,91 @@ function showConfirmDialog(messageHTML, onConfirmCallback) {
   document.getElementById('dyn-confirm-cancel').onclick = () => modalEl.remove();
   modalEl.onclick = (e) => { if (e.target === modalEl) modalEl.remove(); };
   document.getElementById('dyn-confirm-accept').onclick = async () => { modalEl.remove(); if (onConfirmCallback) await onConfirmCallback(); };
+}
+
+// --- NUEVA FUNCIÓN PARA IMPORTAR LIGA (QR O JSON) ---
+function openImportLeagueModal() {
+  document.getElementById('dynamic-import-league-modal')?.remove();
+
+  const modalHTML = `
+    <div id="dynamic-import-league-modal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 420px;">
+        <h2 class="modal-card__title">Importar Liga</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">
+          Escanea el código QR inicial de la liga (o de actualización) o sube el archivo JSON que te envió el organizador.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <button id="btn-scan-league-qr" class="btn btn--primary" style="width: 100%;">📱 Escanear QR de Liga</button>
+          
+          <div style="text-align: center; color: #64748b; font-size: 0.8rem; margin: 0.5rem 0;">- O -</div>
+
+          <button id="btn-upload-league-json" class="btn btn--secondary" style="width: 100%;">📁 Subir Archivo JSON</button>
+          <input type="file" id="league-json-input" accept=".json" style="display: none;">
+
+          <div id="qr-league-video-container" style="display: none; border-radius: 8px; overflow: hidden; margin-top: 1rem;">
+            <video id="qr-league-video" style="width: 100%; height: auto;" autoplay muted playsinline></video>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 2rem; text-align: right;">
+          <button type="button" id="dyn-import-league-cancel" class="btn btn--secondary">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modalEl = document.getElementById('dynamic-import-league-modal');
+  const videoEl = document.getElementById('qr-league-video');
+  const videoContainer = document.getElementById('qr-league-video-container');
+  const fileInput = document.getElementById('league-json-input');
+
+  document.getElementById('dyn-import-league-cancel').onclick = () => {
+    stopQRScanner();
+    modalEl.remove();
+  };
+
+  // 1. Escanear QR
+  document.getElementById('btn-scan-league-qr').onclick = async () => {
+    videoContainer.style.display = 'block';
+    await startQRScanner(videoEl, async (rawData) => {
+      try {
+        const result = await handleImportData(rawData);
+        if (result.success) {
+          AlertService.showChampion(result.message || '¡Liga importada/actualizada!', '¡SINCRONIZADO!');
+          stopQRScanner();
+          modalEl.remove();
+          renderLeaguesView(); 
+        }
+      } catch (err) {
+        AlertService.showError(err.message, 'ERROR DE QR');
+        stopQRScanner();
+        videoContainer.style.display = 'none';
+      }
+    }, (err) => {
+      AlertService.showError('No se pudo acceder a la cámara. Usa Subir JSON en su lugar.', 'ERROR DE CÁMARA');
+    });
+  };
+
+  // 2. Subir JSON
+  document.getElementById('btn-upload-league-json').onclick = () => fileInput.click();
+
+  fileInput.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const result = await importLeagueFromJsonFile(file);
+      if (result.success) {
+        AlertService.showChampion(result.message || '¡Liga importada!', '¡LIGA IMPORTADA!');
+        modalEl.remove();
+        renderLeaguesView(); 
+      }
+    } catch (err) {
+      AlertService.showError(err.message, 'ERROR DE ARCHIVO');
+    }
+  };
 }
 
 function openImportTeamScanner(leagueData) {
