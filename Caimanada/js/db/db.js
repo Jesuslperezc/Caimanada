@@ -1,10 +1,6 @@
 // db.js (o como lo hayas llamado)
 const DB_NAME = 'caimanada_db';
-<<<<<<< HEAD
-const DB_VERSION = 2; // Subimos la versión a 2 para que aplique el onupgradeneeded y cree el store 'events'
-=======
 const DB_VERSION = 2;
->>>>>>> 4c7aa39b3c5f7c402e069f980dcecb5ff272025e
 
 let dbInstance = null;
 
@@ -55,17 +51,11 @@ export function openDB() {
         matchesStore.createIndex('status', 'status', { unique: false }); // Índice exigido
       }
 
-<<<<<<< HEAD
       // NUEVO: Object Store para los eventos (MatchEvents)
       if (!db.objectStoreNames.contains('events')) {
         const eventsStore = db.createObjectStore('events', { keyPath: 'id' });
         eventsStore.createIndex('matchId', 'matchId', { unique: false });
         eventsStore.createIndex('playerId', 'playerId', { unique: false });
-=======
-      if (!db.objectStoreNames.contains('players')) {
-        const playersStore = db.createObjectStore('players', { keyPath: 'id' });
-        playersStore.createIndex('teamId', 'teamId', { unique: false });
->>>>>>> 4c7aa39b3c5f7c402e069f980dcecb5ff272025e
       }
     };
 

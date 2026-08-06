@@ -5,7 +5,8 @@ const STORE_NAME = 'matches';
 export async function getMatchesByLeague(leagueId) {
   if (!leagueId) return [];
   try {
-    const matches = await executeTransaction(STORE_NAME, 'readonly', (store) => {
+    const matches = await executeTransaction(STORE_NAME, 'readonly', (tx) => {
+      const store = tx.objectStore(STORE_NAME);
       return store.getAll();
     });
     
@@ -18,31 +19,31 @@ export async function getMatchesByLeague(leagueId) {
 }
 
 export async function saveMatchResult(matchId, scoreHome, scoreAway) {
-  return executeTransaction(STORE_NAME, 'readwrite', (store) => {
-    return new Promise((resolve, reject) => {
-      const getRequest = store.get(matchId);
-      
-      getRequest.onsuccess = () => {
-        const match = getRequest.result;
-        if (!match) return resolve(null);
-
-        match.scoreHome = Number(scoreHome);
-        match.scoreAway = Number(scoreAway);
-        match.status = 'completed';
-        match.updatedAt = new Date().toISOString();
-
-        const putReq = store.put(match);
-        putReq.onsuccess = () => resolve(match);
-        putReq.onerror = (e) => reject(e.target.error);
-      };
-
-      getRequest.onerror = (e) => reject(e.target.error);
-    });
+  // Primero obtenemos el partido en una transacción de lectura
+  const match = await executeTransaction(STORE_NAME, 'readonly', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    return store.get(matchId);
   });
+
+  if (!match) return null;
+
+  // Luego lo actualizamos en una transacción de escritura
+  match.scoreHome = Number(scoreHome);
+  match.scoreAway = Number(scoreAway);
+  match.status = 'completed';
+  match.updatedAt = new Date().toISOString();
+
+  await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    return store.put(match);
+  });
+  
+  return match;
 }
 
 export async function bulkInsertMatches(matchesList) {
-  return executeTransaction(STORE_NAME, 'readwrite', (store) => {
+  await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
     matchesList.forEach(match => {
       const newMatch = {
         id: match.id || `match_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -55,14 +56,19 @@ export async function bulkInsertMatches(matchesList) {
         status: match.status || 'pending',
         date: match.date || null
       };
-      store.add(newMatch);
+      store.add(newMatch); // Se disparan todos en la misma transacción
     });
+    return null;
   });
+  return true;
 }
 
 export async function deleteMatchesByLeague(leagueId) {
   const matches = await getMatchesByLeague(leagueId);
-  for (const match of matches) {
-    await executeTransaction(STORE_NAME, 'readwrite', (store) => store.delete(match.id));
-  }
+  await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    matches.forEach(match => store.delete(match.id));
+    return null;
+  });
+  return true;
 }

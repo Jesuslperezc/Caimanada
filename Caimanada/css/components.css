@@ -45,26 +45,169 @@ svg {
 
 .app-header__brand:hover .app-header__logo-svg {
   transform: scale(1.03);
+
+}
+/* === HEADER MÓVIL (Unidades Relativas) === */
+@media (max-width: 48em) { /* 48em = 768px */
+  .app-header {
+    background: var(--bg-header) !important;
+    border-bottom: 0.0625rem solid var(--border-subtle) !important; /* 1px */
+    backdrop-filter: blur(1rem) !important;
+    -webkit-backdrop-filter: blur(1rem) !important;
+    position: sticky !important;
+    top: 0 !important;
+    height: 4.25rem !important; /* Equivalente a ~68px */
+    z-index: 100 !important;
+  }
+
+  .app-header__container {
+    position: relative !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: 100% !important;
+    padding: 0 0.75rem !important;
+  }
+
+  /* 1. Logo pegado a la izquierda */
+  .app-header__brand {
+    position: absolute !important;
+    left: 0.75rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+  
+  /* Tamaño del logo fluido */
+  .app-header__logo-svg {
+    height: 2rem !important; /* Equivalente a 32px */
+    width: auto !important;
+  }
+
+  .nav-desktop {
+    display: none !important;
+  }
+
+  /* 2. Selector centrado adaptativo */
+  #active-sport-badge {
+    position: relative !important;
+    top: 0 !important;
+    right: 0 !important;
+    min-width: auto !important;
+    max-width: 60% !important; /* No ocupa más del 60% de la pantalla */
+    justify-content: center !important;
+    text-align: center;
+    z-index: 10 !important;
+    padding: 0.35rem 1.2rem 0.35rem 0.6rem !important;
+  }
+
+  /* Texto del selector fluido */
+  .sport-badge__select {
+    font-size: 0.8rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+/* Deporte Seleccionado */
+/* Estilo del selector de deporte en el navbar */
+.sport-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-/* Deporte Seleccionado */
+.sport-badge:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.sport-badge__icon {
+  font-size: 1rem;
+}
+
+.sport-badge__select {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit; /* Hereda el color del texto del navbar */
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  padding-right: 0.2rem;
+}
+
+/* Estilo de las opciones cuando se despliega el dropdown (modo oscuro) */
+.sport-badge__select option {
+  background-color: #1e293b; 
+  color: #ffffff;
+  text-transform: none; /* Las opciones en minúsculas para lectura */
+}
+/* === Contenedor del Badge (Pastilla Verde) === */
 .sport-badge {
+  position: relative; /* Necesario para posicionar la flecha custom */
   display: inline-flex;
   align-items: center;
-  padding: 0.3rem 0.85rem;
-  background-color: rgba(0, 168, 107, 0.12);
-  border: 1px solid rgba(0, 168, 107, 0.35);
-  border-radius: var(--radius-full);
+  gap: 0.5rem;
+  background: rgba(16, 185, 129, 0.1); /* Fondo verde muy transparente */
+  border: 1px solid rgba(16, 185, 129, 0.4); /* Borde verde sutil */
+  padding: 0.4rem 1.5rem 0.4rem 0.8rem; /* Espacio derecho para la flecha */
+  border-radius: 20px; /* Bordes redondeados tipo pastilla */
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.sport-badge__text {
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: var(--accent-primary);
-  letter-spacing: 0.08em;
+.sport-badge:hover {
+  background: rgba(16, 185, 129, 0.2); /* Se ilumina al pasar el ratón */
+  border-color: #10b981; /* Verde sólido */
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); /* Brillo verde */
+}
+
+.sport-badge__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* === El Select en sí (Invisible, solo texto) === */
+.sport-badge__select {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #10b981; /* Verde Caimanada */
+  font-weight: 700;
+  font-size: 0.85rem;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  padding: 0;
+  /* Truco para ocultar la flecha nativa del navegador */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
+/* === Flecha Personalizada (SVG verde) === */
+.sport-badge::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-25%);
+  width: 10px;
+  height: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none; /* Para que el clic pase al select */
+}
+
+/* === Estilo de las opciones al desplegarse === */
+.sport
 .nav-desktop {
   display: none;
 }
@@ -494,4 +637,32 @@ caiman-toast.is-leaving {
     opacity: 0;
     transform: translateX(30px) scale(0.95);
   }
+}
+
+.league-card {
+  position: relative; /* Necesario para el absolute del badge */
+}
+
+.league-card__role {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.league-card__role--owner {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.league-card__role--guest {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }

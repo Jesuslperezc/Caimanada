@@ -3,9 +3,11 @@ import { getTeamsByLeague } from '../db/repositories/teams.js';
 import { getMatchesByLeague } from '../db/repositories/matches.js';
 import { renderLeagueStatsChart } from '../components/statsChart.js';
 import { startQRScanner, stopQRScanner } from '../utils/qr.js';
-import { handleImportData } from '../utils/export-import.js';
+// 1. IMPORTAMOS la función de exportación y la de importación por QR
+import { handleImportData, exportLeagueToJson } from '../utils/export-import.js';
+// Ajusta esta ruta a donde tengas tu AlertService
+import { AlertService } from '../components/alert.js'; 
 
-// Mapeo para mostrar nombres amigables en las tarjetas visuales
 const SPORT_DISPLAY_NAMES = {
   futbol_sala: 'Futbolito / Futsal',
   futbol_campo: 'Fútbol Campo',
@@ -36,91 +38,93 @@ export async function renderLeaguesView() {
   const container = document.getElementById('leagues-section');
   if (!container) return;
 
-  const leagues = await getAllLeagues();
-  const activeLeague = await getActiveLeague();
+  container.innerHTML = `<loading-state message="Cargando ligas..."></loading-state>`;
 
-  container.innerHTML = `
-    <header class="leagues-header">
-      <div>
-        <h1 class="view-title">Gestión de Ligas</h1>
-        <p class="view-subtitle">Crea, administra y activa los torneos de CaimanaDa</p>
-      </div>
-      <button id="btn-open-create-modal" class="btn btn--primary">+ Crear Nueva Liga</button>
-    </header>
+  try {
+    const allLeagues = await getAllLeagues();
+    const activeSport = getActiveSport();
+    const leagues = allLeagues.filter(league => league.sport === activeSport);
+    const activeLeague = await getActiveLeague();
+    
+    container.innerHTML = `
+      <header class="leagues-header">
+        <div>
+          <h1 class="view-title">Gestión de Ligas</h1>
+          <p class="view-subtitle">Crea, administra y activa los torneos de CaimanaDa</p>
+        </div>
+        <button id="btn-open-create-modal" class="btn btn--primary">+ Crear Nueva Liga</button>
+      </header>
 
-    <!-- Modal de Liga -->
-    <div id="league-modal" class="modal-overlay is-hidden">
-      <div class="modal-card">
-        <h2 id="modal-title" class="modal-card__title">Crear Liga</h2>
-        <form id="league-form">
-          <input type="hidden" id="league-id" />
-          
-          <div class="form-group">
-            <label class="form-group__label">Nombre de la Liga *</label>
-            <input type="text" id="league-name" required placeholder="Ej: Torneo Verano 2026" class="form-control" />
-          </div>
-
-          <div class="form-grid-2">
+      <div id="league-modal" class="modal-overlay is-hidden">
+        <div class="modal-card">
+          <h2 id="modal-title" class="modal-card__title">Crear Liga</h2>
+          <form id="league-form">
+            <input type="hidden" id="league-id" />
             <div class="form-group">
-              <label class="form-group__label">Deporte *</label>
-              <select id="league-sport" required class="form-control">
-                <option value="futbol_sala">Futbolito / Futsal</option>
-                <option value="futbol_campo">Fútbol Campo</option>
-                <option value="basketball">Baloncesto</option>
-                <option value="baseball">Béisbol</option>
-                <option value="kickingball">Kickingball</option>
-                <option value="volleyball">Voleibol</option>
-                <option value="padel">Pádel</option>
-                <option value="ping_pong">Ping-Pong</option>
-                <option value="ajedrez">Ajedrez</option>
+              <label class="form-group__label">Nombre de la Liga *</label>
+              <input type="text" id="league-name" required placeholder="Ej: Torneo Verano 2026" class="form-control" />
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-group__label">Deporte *</label>
+                <select id="league-sport" required class="form-control">
+                  <option value="futbol_sala">Futbolito / Futsal</option>
+                  <option value="futbol_campo">Fútbol Campo</option>
+                  <option value="basketball">Baloncesto</option>
+                  <option value="baseball">Béisbol</option>
+                  <option value="kickingball">Kickingball</option>
+                  <option value="volleyball">Voleibol</option>
+                  <option value="padel">Pádel</option>
+                  <option value="ping_pong">Ping-Pong</option>
+                  <option value="ajedrez">Ajedrez</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-group__label">Temporada *</label>
+                <input type="text" id="league-season" required placeholder="Ej: 2026-I" class="form-control" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-group__label">Modalidad *</label>
+              <select id="league-mode" required class="form-control">
+                <option value="Liga - Una vuelta">Liga (Todos contra todos - Una vuelta)</option>
+                <option value="Liga - Ida y vuelta">Liga (Todos contra todos - Ida y vuelta)</option>
+                <option value="Eliminación directa - 4 equipos">Eliminación directa (4 equipos)</option>
+                <option value="Eliminación directa - 8 equipos">Eliminación directa (8 equipos)</option>
+                <option value="Eliminación directa - 16 equipos">Eliminación directa (16 equipos)</option>
               </select>
             </div>
-
             <div class="form-group">
-              <label class="form-group__label">Temporada *</label>
-              <input type="text" id="league-season" required placeholder="Ej: 2026-I" class="form-control" />
+              <label class="form-group__label">Duración estimada (días) *</label>
+              <input type="number" id="league-duration" min="1" value="7" required class="form-control" />
             </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-group__label">Modalidad *</label>
-            <select id="league-mode" required class="form-control">
-              <option value="Liga - Una vuelta">Liga (Todos contra todos - Una vuelta)</option>
-              <option value="Liga - Ida y vuelta">Liga (Todos contra todos - Ida y vuelta)</option>
-              <option value="Eliminación directa - 4 equipos">Eliminación directa (4 equipos)</option>
-              <option value="Eliminación directa - 8 equipos">Eliminación directa (8 equipos)</option>
-              <option value="Eliminación directa - 16 equipos">Eliminación directa (16 equipos)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-group__label">Duración estimada (días) *</label>
-            <input type="number" id="league-duration" min="1" value="7" required class="form-control" />
-          </div>
-
-          <div class="form-group form-group--last">
-            <label class="form-group__label">Descripción (Opcional)</label>
-            <textarea id="league-description" rows="2" placeholder="Reglas especiales, sede, etc." class="form-control"></textarea>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" id="btn-close-modal" class="btn btn--secondary">Cancelar</button>
-            <button type="submit" class="btn btn--primary">Guardar Liga</button>
-          </div>
-        </form>
+            <div class="form-group form-group--last">
+              <label class="form-group__label">Descripción (Opcional)</label>
+              <textarea id="league-description" rows="2" placeholder="Reglas especiales, sede, etc." class="form-control"></textarea>
+            </div>
+            <div class="modal-actions">
+              <button type="button" id="btn-close-modal" class="btn btn--secondary">Cancelar</button>
+              <button type="submit" class="btn btn--primary">Guardar Liga</button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
 
-    <!-- Grilla de Ligas -->
-    <div id="leagues-grid" class="leagues-grid"></div>
+      <div id="leagues-grid" class="leagues-grid"></div>
+      <div id="league-stats-container" style="margin-top: 2rem;"></div>
+    `;
 
-    <!-- Contenedor del Gráfico de Estadísticas -->
-    <div id="league-stats-container" style="margin-top: 2rem;"></div>
-  `;
+    await renderLeaguesCards(leagues, activeLeague);
+    await renderLeagueChartSection(leagues);
+    setupModalEvents(leagues);
 
-  await renderLeaguesCards(leagues, activeLeague);
-  await renderLeagueChartSection(leagues);
-  setupModalEvents(leagues);
+  } catch (error) {
+    console.error('Error al renderizar ligas:', error);
+    container.innerHTML = ''; 
+    const errComp = document.createElement('error-state');
+    errComp.setError('Hubo un problema al cargar las ligas.', () => renderLeaguesView());
+    container.appendChild(errComp);
+  }
 }
 
 async function renderLeagueChartSection(leagues) {
@@ -187,9 +191,10 @@ async function renderLeaguesCards(leagues, activeLeague) {
   if (!grid) return;
 
   if (leagues.length === 0) {
+    const sportName = SPORT_DISPLAY_NAMES[getActiveSport()] || 'este deporte';
     grid.innerHTML = `
       <div class="empty-state">
-        <p class="empty-state__title">No hay ligas registradas en el sistema.</p>
+        <p class="empty-state__title">No hay ligas de ${sportName} registradas.</p>
         <p class="empty-state__subtitle">Presiona "+ Crear Nueva Liga" para empezar tu torneo.</p>
       </div>
     `;
@@ -202,16 +207,18 @@ async function renderLeaguesCards(leagues, activeLeague) {
     const matches = await getMatchesByLeague(league.id);
 
     const safeName = escapeHTML(league.name);
-    // Traducción del identificador interno al nombre amigable del deporte
     const displaySportName = SPORT_DISPLAY_NAMES[league.sport] || league.sport || 'Fútbol';
     const safeSport = escapeHTML(displaySportName);
     const safeSeason = escapeHTML(league.season || '2026');
     const safeMode = escapeHTML(league.mode);
     const safeDescription = escapeHTML(league.description);
     const safeId = escapeHTML(league.id);
-
     return `
-      <article class="league-card ${isActive ? 'league-card--active' : ''}">
+      <article class="league-card ${isActive ? 'league-card--active' : ''}" style="position: relative;">
+        <span class="league-card__role ${league.role === 'guest' ? 'league-card__role--guest' : 'league-card__role--owner'}">
+          ${league.role === 'guest' ? 'INVITADO' : 'PROPIETARIO'}
+        </span>
+        
         <header class="league-card__header">
           <div class="league-card__meta">
             <span class="league-card__badge">${safeSport}</span>
@@ -219,14 +226,12 @@ async function renderLeaguesCards(leagues, activeLeague) {
           </div>
           <h2 class="league-card__title">${safeName}</h2>
         </header>
-
         <div class="league-card__body">
           <p><strong>Modalidad:</strong> ${safeMode}</p>
           <p><strong>Equipos:</strong> ${teams.length} registrados</p>
           <p><strong>Partidos:</strong> ${matches.length} programados</p>
           ${safeDescription ? `<p class="league-card__description">"${safeDescription}"</p>` : ''}
         </div>
-
         <footer class="league-card__footer">
           <div>
             ${isActive 
@@ -235,7 +240,9 @@ async function renderLeaguesCards(leagues, activeLeague) {
             }
           </div>
           <div class="league-card__actions">
-            <button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">Editar</button>
+            ${league.role === 'guest' ? '' : `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">Editar</button>`}
+            <!-- 2. AÑADIMOS EL BOTÓN DE EXPORTAR -->
+            <button class="btn btn--secondary btn--sm btn-export-league" data-id="${safeId}">Exportar</button>
             <button class="btn btn--sm btn-danger btn-delete-league" data-id="${safeId}">Borrar</button>
           </div>
         </footer>
@@ -260,77 +267,54 @@ function setupModalEvents(leagues) {
     form.reset();
     document.getElementById('league-id').value = '';
     modalTitle.textContent = 'Crear Nueva Liga';
-    
-    // Auto-seleccionar el deporte activo actual en el desplegable
     sportSelect.value = getActiveSport();
-
-    sportSelect.disabled = false;
+    sportSelect.disabled = true; 
     modeSelect.disabled = false;
     modal.classList.remove('is-hidden');
   });
 
-  btnClose?.addEventListener('click', () => {
-    modal.classList.add('is-hidden');
-  });
+  btnClose?.addEventListener('click', () => modal.classList.add('is-hidden'));
 
-form?.addEventListener('submit', async (e) => {
-  e.preventDefault();
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('league-id').value;
+    const name = document.getElementById('league-name').value.trim();
+    const season = document.getElementById('league-season').value.trim();
+    const durationDays = document.getElementById('league-duration').value;
+    const description = document.getElementById('league-description').value.trim();
 
-  const id = document.getElementById('league-id').value;
-  const name = document.getElementById('league-name').value.trim();
-  const season = document.getElementById('league-season').value.trim();
-  const durationDays = document.getElementById('league-duration').value;
-  const description = document.getElementById('league-description').value.trim();
+    const isDuplicate = leagues.some(l => l.name.toLowerCase() === name.toLowerCase() && l.id !== id);
+    if (isDuplicate) {
+      AlertService.showWarning(`Ya existe una liga con el nombre "${name}".`, 'NOMBRE EN USO');
+      return;
+    }
 
-  const isDuplicate = leagues.some(l => l.name.toLowerCase() === name.toLowerCase() && l.id !== id);
-  if (isDuplicate) {
-    alert(`Ya existe una liga con el nombre "${name}". Por favor usa otro.`);
-    return;
-  }
-
-  if (id) {
-    const targetLeague = leagues.find(l => l.id === id);
-    if (targetLeague) {
-      const updatedData = {
-        ...targetLeague,
-        name,
-        season,
-        durationDays: Number(durationDays),
-        description
-      };
-
-      if (typeof updateLeague === 'function') {
-        await updateLeague(updatedData);
+    try {
+      if (id) {
+        const targetLeague = leagues.find(l => l.id === id);
+        if (targetLeague) {
+          const updatedData = { ...targetLeague, name, season, durationDays: Number(durationDays), description };
+          if (typeof updateLeague === 'function') {
+            await updateLeague(updatedData);
+            AlertService.showSuccess('Liga actualizada correctamente.');
+          }
+        }
       } else {
-        await createLeague(updatedData);
+        const sport = sportSelect.value; 
+        const mode = modeSelect.value;
+        const createdLeague = await createLeague({ name, sport, season, mode, durationDays: Number(durationDays), description, isActive: true });
+        localStorage.setItem('active_sport_id', sport);
+        if (createdLeague && createdLeague.id) {
+          localStorage.setItem('caimanada_active_league', createdLeague.id);
+        }
+        AlertService.showChampion('¡Liga creada y activada con éxito!', '¡NUEVO TORNEO!');
       }
+      modal.classList.add('is-hidden');
+      await renderLeaguesView();
+    } catch (err) {
+       AlertService.showError('No se pudo guardar la liga en la base de datos.');
     }
-  } else {
-    const sport = sportSelect.value;
-    const mode = modeSelect.value;
-
-    const createdLeague = await createLeague({
-      name,
-      sport,
-      season,
-      mode,
-      durationDays: Number(durationDays),
-      description,
-      isActive: true
-    });
-
-    localStorage.setItem('active_sport_id', sport);
-    if (createdLeague && createdLeague.id) {
-      localStorage.setItem('caimanada_active_league', createdLeague.id);
-    }
-  }
-
-  // Ocultar modal
-  modal.classList.add('is-hidden');
-
-  // Recargar la vista obteniendo la lista fresca directamente de IndexedDB
-  await renderLeaguesView();
-});
+  });
 }
 
 function setupCardEvents(leagues) {
@@ -344,16 +328,27 @@ function setupCardEvents(leagues) {
 
     if (target.classList.contains('btn-set-active')) {
       const league = leagues.find(l => l.id === leagueId);
-
       await setActiveLeague(leagueId);
       localStorage.setItem('caimanada_active_league', leagueId);
-
-      // Sincronizar deporte activo global al activar una liga
       if (league && league.sport) {
         localStorage.setItem('active_sport_id', league.sport);
       }
+      AlertService.showSuccess(`Liga ${league.name} activada.`, 'LIGA ACTIVA');
+      setTimeout(() => window.location.hash = '#dashboard', 800);
+      return;
+    }
 
-      window.location.hash = '#dashboard';
+    // 3. AÑADIMOS EL EVENTO PARA EXPORTAR
+    if (target.classList.contains('btn-export-league')) {
+      const league = leagues.find(l => l.id === leagueId);
+      if (league) {
+        try {
+          await exportLeagueToJson(league);
+          AlertService.showSuccess('Descargando archivo JSON de la liga...', 'EXPORTACIÓN LISTA');
+        } catch (err) {
+          AlertService.showError(err.message || 'No se pudo exportar la liga.');
+        }
+      }
       return;
     }
 
@@ -372,7 +367,6 @@ function setupCardEvents(leagues) {
 
       sportSelect.value = league.sport;
       modeSelect.value = league.mode;
-
       sportSelect.disabled = true;
       modeSelect.disabled = true;
 
@@ -383,26 +377,63 @@ function setupCardEvents(leagues) {
 
     if (target.classList.contains('btn-delete-league')) {
       const league = leagues.find(l => l.id === leagueId);
-      const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar la liga "${league.name}"?\n\nESTA ACCIÓN BORRARÁ TODOS SUS EQUIPOS Y PARTIDOS ASOCIADOS.`);
-
-      if (!confirmDelete) return;
-
-      await deleteLeague(leagueId);
-
-      const remainingLeagues = await getAllLeagues();
-      if (remainingLeagues.length > 0) {
-        const hasActive = remainingLeagues.some(l => l.isActive);
-        if (!hasActive) {
-          const nextLeague = remainingLeagues[0];
-          await setActiveLeague(nextLeague.id);
-          localStorage.setItem('caimanada_active_league', nextLeague.id);
-          localStorage.setItem('active_sport_id', nextLeague.sport || 'futbol_sala');
+      showConfirmDialog(
+        `¿Estás seguro de que deseas eliminar la liga <strong>"${escapeHTML(league.name)}"</strong>?<br><br>ESTA ACCIÓN BORRARÁ TODOS SUS EQUIPOS Y PARTIDOS ASOCIADOS.`,
+        async () => {
+          try {
+            await deleteLeague(leagueId);
+            const remainingLeagues = await getAllLeagues();
+            if (remainingLeagues.length > 0) {
+              const hasActive = remainingLeagues.some(l => l.isActive);
+              if (!hasActive) {
+                const nextLeague = remainingLeagues[0];
+                await setActiveLeague(nextLeague.id);
+                localStorage.setItem('caimanada_active_league', nextLeague.id);
+                localStorage.setItem('active_sport_id', nextLeague.sport || 'futbol_sala');
+              }
+            } else {
+              localStorage.removeItem('caimanada_active_league');
+            }
+            AlertService.showWarning('Liga eliminada correctamente.', 'LIGA BORRADA');
+            renderLeaguesView();
+          } catch (err) {
+            AlertService.showError('Error al eliminar la liga.');
+          }
         }
-      } else {
-        localStorage.removeItem('caimanada_active_league');
-      }
-
-      renderLeaguesView();
+      );
     }
   });
+}
+
+function showConfirmDialog(messageHTML, onConfirmCallback) {
+  document.getElementById('dynamic-confirm-modal')?.remove();
+
+  const modalHTML = `
+    <div id="dynamic-confirm-modal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 420px; text-align: center;">
+        <h2 class="modal-card__title">Confirmar Acción</h2>
+        <p style="color: #94a3b8; margin-bottom: 1.5rem; line-height: 1.6; font-size: 0.95rem;">
+          ${messageHTML}
+        </p>
+        <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: center;">
+          <button type="button" id="dyn-confirm-cancel" class="btn btn--secondary">Cancelar</button>
+          <button type="button" id="dyn-confirm-accept" class="btn btn--danger">Sí, Eliminar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modalEl = document.getElementById('dynamic-confirm-modal');
+
+  document.getElementById('dyn-confirm-cancel').onclick = () => modalEl.remove();
+
+  modalEl.onclick = (e) => {
+    if (e.target === modalEl) modalEl.remove();
+  };
+
+  document.getElementById('dyn-confirm-accept').onclick = async () => {
+    modalEl.remove();
+    if (onConfirmCallback) await onConfirmCallback();
+  };
 }

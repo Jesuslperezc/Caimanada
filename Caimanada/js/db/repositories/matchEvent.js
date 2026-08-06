@@ -14,7 +14,7 @@ const MatchEventRepository = {
     /**
      * Crea un nuevo evento en la base de datos.
      */
-    async addEvent(eventData) {
+       async addEvent(eventData) {
         if (!eventData.matchId || !eventData.playerId || !eventData.teamId) {
             throw new Error("Faltan campos obligatorios (matchId, teamId, playerId)");
         }
@@ -22,6 +22,7 @@ const MatchEventRepository = {
         return executeTransaction(STORE_NAME, 'readwrite', (tx) => {
             const store = tx.objectStore(STORE_NAME);
             return store.add({
+                id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, // <--- ID AÑADIDO
                 matchId: eventData.matchId,
                 teamId: eventData.teamId,
                 playerId: eventData.playerId,
@@ -32,24 +33,21 @@ const MatchEventRepository = {
         });
     },
 
-    /**
-     * Agrega eventos usando una transacción compartida.
-     * Vital para "Finalizar Partido" (Sección 4.8.3)
-     */
     async addEventsInTransaction(tx, events) {
         if (!events || events.length === 0) return Promise.resolve();
         
         const store = tx.objectStore(STORE_NAME);
-        // En una transacción compartida no necesitamos esperar promesas individuales,
-        // solo disparamos las operaciones y la transacción principal se encarga del commit.
         events.forEach(event => {
             if (!event.matchId || !event.playerId) {
                 throw new Error("Evento inválido en la transacción masiva");
             }
+            // Nos aseguramos de que el evento tenga ID antes de agregarlo
+            if (!event.id) {
+                event.id = `event_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+            }
             store.add(event);
         });
     },
-
     /**
      * Obtiene todos los eventos de un partido específico.
      */

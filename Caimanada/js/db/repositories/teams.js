@@ -4,19 +4,12 @@ const STORE_NAME = 'teams';
 
 export async function getTeamsBySport(sportId) {
   try {
-    const result = await executeTransaction(STORE_NAME, 'readonly', (store) => {
-      return new Promise((resolve, reject) => {
-        const request = store.getAll();
-        request.onsuccess = () => {
-          const allTeams = request.result || [];
-          // Filtra por deporte o los que no tengan deporte asignado aún
-          const filtered = allTeams.filter(t => !t.sportId || t.sportId === sportId);
-          resolve(filtered);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
+    const result = await executeTransaction(STORE_NAME, 'readonly', (tx) => {
+      const store = tx.objectStore(STORE_NAME);
+      return store.getAll();
     });
-    return Array.isArray(result) ? result : [];
+    const allTeams = Array.isArray(result) ? result : [];
+    return allTeams.filter(t => !t.sportId || t.sportId === sportId);
   } catch (error) {
     console.error('Error obteniendo equipos por deporte:', error);
     return [];
@@ -26,17 +19,12 @@ export async function getTeamsBySport(sportId) {
 export async function getTeamsByLeague(leagueId) {
   if (!leagueId) return [];
   try {
-    const result = await executeTransaction(STORE_NAME, 'readonly', (store) => {
-      return new Promise((resolve, reject) => {
-        const request = store.getAll();
-        request.onsuccess = () => {
-          const allTeams = request.result || [];
-          resolve(allTeams.filter(t => t.leagueId === leagueId));
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
+    const result = await executeTransaction(STORE_NAME, 'readonly', (tx) => {
+      const store = tx.objectStore(STORE_NAME);
+      return store.getAll();
     });
-    return Array.isArray(result) ? result : [];
+    const allTeams = Array.isArray(result) ? result : [];
+    return allTeams.filter(t => t.leagueId === leagueId);
   } catch (error) {
     console.error('Error obteniendo equipos por liga:', error);
     return [];
@@ -54,31 +42,38 @@ export async function addTeam(teamData) {
     createdAt: new Date().toISOString()
   };
 
-  return executeTransaction(STORE_NAME, 'readwrite', (store) => {
-    return new Promise((resolve, reject) => {
-      const request = store.add(newTeam);
-      request.onsuccess = () => resolve(newTeam);
-      request.onerror = (e) => reject(e.target.error);
-    });
+  await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    return store.add(newTeam);
   });
+  return newTeam;
 }
 
 export async function updateTeam(teamData) {
-  return executeTransaction(STORE_NAME, 'readwrite', (store) => {
-    return new Promise((resolve, reject) => {
-      const request = store.put(teamData);
-      request.onsuccess = () => resolve(teamData);
-      request.onerror = (e) => reject(e.target.error);
-    });
+  if (!teamData.id) return null;
+  
+  // 1. Obtenemos el equipo actual para no perder sus datos
+  const existing = await executeTransaction(STORE_NAME, 'readonly', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    return store.get(teamData.id);
   });
+
+  // 2. Fusionamos los datos nuevos con los viejos
+  const updatedTeam = { ...existing, ...teamData };
+
+  // 3. Guardamos el resultado
+  await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    return store.put(updatedTeam);
+  });
+  
+  return updatedTeam;
 }
 
 export async function deleteTeam(teamId) {
-  return executeTransaction(STORE_NAME, 'readwrite', (store) => {
-    return new Promise((resolve, reject) => {
-      const request = store.delete(teamId);
-      request.onsuccess = () => resolve(true);
-      request.onerror = (e) => reject(e.target.error);
-    });
+  await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    return store.delete(teamId);
   });
+  return true;
 }

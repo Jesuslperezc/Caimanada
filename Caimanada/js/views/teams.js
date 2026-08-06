@@ -1,8 +1,12 @@
-import { getActiveLeague } from '../db/repositories/leagues.js';
+import { getActiveLeague, getAllLeagues } from '../db/repositories/leagues.js';
 import { getTeamsBySport, addTeam, updateTeam, deleteTeam } from '../db/repositories/teams.js';
 import { getMatchesByLeague } from '../db/repositories/matches.js';
 import { getPlayersByTeam, addPlayer, deletePlayer } from '../db/repositories/players.js';
 import { calculateStandings } from '../utils/statsCalculator.js';
+import { AlertService } from '../components/alert.js';
+import { getMaxPlayersForSport, getPositionsForSport } from '../utils/sport-terms.js';
+import { startQRScanner, stopQRScanner } from '../utils/qr.js';
+import { handleImportData, importLeagueFromJsonFile } from '../utils/export-import.js';
 
 const SPORT_DISPLAY_NAMES = {
   futbol_sala: 'Futbolito / Futsal',
@@ -30,6 +34,39 @@ function escapeHTML(str) {
     .replace(/'/g, '&#039;');
 }
 
+function showConfirmDialog(messageHTML, onConfirmCallback) {
+  document.getElementById('dynamic-confirm-modal')?.remove();
+
+  const modalHTML = `
+    <div id="dynamic-confirm-modal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 420px; text-align: center;">
+        <h2 class="modal-card__title">Confirmar Acción</h2>
+        <p style="color: #94a3b8; margin-bottom: 1.5rem; line-height: 1.6; font-size: 0.95rem;">
+          ${messageHTML}
+        </p>
+        <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: center;">
+          <button type="button" id="dyn-confirm-cancel" class="btn btn--secondary">Cancelar</button>
+          <button type="button" id="dyn-confirm-accept" class="btn btn--danger">Sí, Eliminar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modalEl = document.getElementById('dynamic-confirm-modal');
+
+  document.getElementById('dyn-confirm-cancel').onclick = () => modalEl.remove();
+
+  modalEl.onclick = (e) => {
+    if (e.target === modalEl) modalEl.remove();
+  };
+
+  document.getElementById('dyn-confirm-accept').onclick = async () => {
+    modalEl.remove();
+    if (onConfirmCallback) await onConfirmCallback();
+  };
+}
+
 export async function renderTeamsView() {
   const container = document.getElementById('teams-content-target');
   const searchInput = document.getElementById('teams-search-input');
@@ -37,165 +74,155 @@ export async function renderTeamsView() {
 
   if (!container) return;
 
-  const activeSportId = getActiveSport();
-  const activeLeague = await getActiveLeague();
+  container.innerHTML = `<loading-state message="Cargando equipos..."></loading-state>`;
 
-  const teamsData = await getTeamsBySport(activeSportId);
+  try {
+    const activeSportId = getActiveSport();
+    const activeLeague = await getActiveLeague();
+    const teamsData = await getTeamsBySport(activeSportId);
 
-  const playersCountMap = {};
-  await Promise.all(
-    teamsData.map(async (team) => {
-      const players = await getPlayersByTeam(team.id);
-      playersCountMap[team.id] = players ? players.length : 0;
-    })
-  );
+    const playersCountMap = {};
+    await Promise.all(
+      teamsData.map(async (team) => {
+        const players = await getPlayersByTeam(team.id);
+        playersCountMap[team.id] = players ? players.length : 0;
+      })
+    );
 
-  let statsMap = {};
-  if (activeLeague) {
-    const matchesData = await getMatchesByLeague(activeLeague.id);
-    const standings = calculateStandings(teamsData, matchesData);
-    statsMap = Object.fromEntries(standings.map(s => [s.id, s]));
-  }
+    let statsMap = {};
+    if (activeLeague) {
+      const matchesData = await getMatchesByLeague(activeLeague.id);
+      const standings = calculateStandings(teamsData, matchesData);
+      statsMap = Object.fromEntries(standings.map(s => [s.id, s]));
+    }
 
-  function render(teams) {
-    if (!teams || teams.length === 0) {
+    function render(teams) {
+      if (!teams || teams.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <p class="empty-state__title">No hay equipos registrados en ${SPORT_DISPLAY_NAMES[activeSportId] || 'este deporte'}.</p>
+            <p class="empty-state__subtitle">Presiona "Registrar Equipo" para agregar el primero.</p>
+          </div>
+        `;
+        return;
+      }
+
       container.innerHTML = `
-        <div class="empty-state">
-          <p class="empty-state__title">No hay equipos registrados en ${SPORT_DISPLAY_NAMES[activeSportId] || 'este deporte'}.</p>
-          <p class="empty-state__subtitle">Presiona "Registrar Equipo" para agregar el primero.</p>
+        <div class="teams-grid">
+          ${teams.map(team => {
+            const safeName = escapeHTML(team.name);
+            const safeDelegate = escapeHTML(team.delegate || 'Sin asignar');
+            const safeColor = team.color ? escapeHTML(team.color) : 'var(--accent-primary, #00A86B)';
+            const playersCount = playersCountMap[team.id] || 0;
+            const safeId = escapeHTML(team.id);
+            const st = statsMap[team.id] || { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 };
+
+            const isInActiveLeague = activeLeague && team.leagueId === activeLeague.id;
+            const canJoinActiveLeague = activeLeague && !team.leagueId;
+
+            return `
+              <article class="info-card team-card" style="border-left: 4px solid ${safeColor}">
+                <header class="info-card__header">
+                  <span class="info-card__label">${team.leagueId ? 'En competición' : 'Club Independiente'}</span>
+                  <h2 class="info-card__highlight">${safeName}</h2>
+                </header>
+                <div class="info-card__body">
+                  <p class="info-card__subtext"><strong>Delegado:</strong> ${safeDelegate}</p>
+                  <p class="info-card__subtext"><strong>Jugadores:</strong> ${playersCount}</p>
+                  <hr class="card-divider" />
+                  <div class="team-stats-summary" style="display: flex; justify-content: space-between; text-align: center; font-size: 0.85rem; margin-top: 0.5rem;">
+                    <div><strong>PTS</strong><br/>${st.pts}</div>
+                    <div><strong>PJ</strong><br/>${st.pj}</div>
+                    <div><strong>G/E/P</strong><br/>${st.pg}/${st.pe}/${st.pp}</div>
+                    <div><strong>DG</strong><br/>${st.dg > 0 ? `+${st.dg}` : st.dg}</div>
+                  </div>
+                </div>
+                <footer class="info-card__footer" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 1rem;">
+                  <button class="btn btn--secondary btn--sm btn-view-roster" data-id="${safeId}" data-name="${safeName}">Plantilla</button>
+                  <button class="btn btn--primary btn--sm btn-add-player" data-id="${safeId}" data-name="${safeName}">+ Jugador</button>
+                  
+                  ${!isInActiveLeague ? `<button class="btn btn--secondary btn--sm btn-join-league" data-id="${safeId}" data-name="${safeName}">Vincular</button>` : ''}
+                  ${isInActiveLeague ? `<button class="btn btn--danger btn--sm btn-leave-league" data-id="${safeId}" data-name="${safeName}">Desvincular</button>` : ''}
+                  
+                  <button class="btn btn--danger btn--sm btn-delete-team" data-id="${safeId}" data-name="${safeName}">Eliminar</button>
+                </footer>
+              </article>
+            `;
+          }).join('')}
         </div>
       `;
-      return;
     }
 
-    container.innerHTML = `
-      <div class="teams-grid">
-        ${teams.map(team => {
-          const safeName = escapeHTML(team.name);
-          const safeDelegate = escapeHTML(team.delegate || 'Sin asignar');
-          const safeColor = team.color ? escapeHTML(team.color) : 'var(--accent-primary, #00A86B)';
-          const playersCount = playersCountMap[team.id] || 0;
-          const safeId = escapeHTML(team.id);
-          const st = statsMap[team.id] || { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 };
-
-          const isInActiveLeague = activeLeague && team.leagueId === activeLeague.id;
-          const canJoinActiveLeague = activeLeague && !team.leagueId;
-
-          return `
-            <article class="info-card team-card" style="border-left: 4px solid ${safeColor}">
-              <header class="info-card__header">
-                <span class="info-card__label">${team.leagueId ? 'En competición' : 'Club Independiente'}</span>
-                <h2 class="info-card__highlight">${safeName}</h2>
-              </header>
-              
-              <div class="info-card__body">
-                <p class="info-card__subtext"><strong>Delegado:</strong> ${safeDelegate}</p>
-                <p class="info-card__subtext"><strong>Jugadores:</strong> ${playersCount}</p>
-                
-                <hr class="card-divider" />
-                
-                <div class="team-stats-summary" style="display: flex; justify-content: space-between; text-align: center; font-size: 0.85rem; margin-top: 0.5rem;">
-                  <div><strong>PTS</strong><br/>${st.pts}</div>
-                  <div><strong>PJ</strong><br/>${st.pj}</div>
-                  <div><strong>G/E/P</strong><br/>${st.pg}/${st.pe}/${st.pp}</div>
-                  <div><strong>DG</strong><br/>${st.dg > 0 ? `+${st.dg}` : st.dg}</div>
-                </div>
-              </div>
-
-              <footer class="info-card__footer" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 1rem;">
-                <button class="btn btn--secondary btn--sm btn-view-roster" data-id="${safeId}" data-name="${safeName}">
-                  Plantilla
-                </button>
-                <button class="btn btn--primary btn--sm btn-add-player" data-id="${safeId}" data-name="${safeName}">
-                  + Jugador
-                </button>
-
-                ${canJoinActiveLeague ? `
-                  <button class="btn btn--secondary btn--sm btn-toggle-league" data-id="${safeId}" data-action="join">
-                    + Vincular
-                  </button>
-                ` : ''}
-
-                ${isInActiveLeague ? `
-                  <button class="btn btn--secondary btn--sm btn-toggle-league" data-id="${safeId}" data-action="leave">
-                    Desvincular
-                  </button>
-                ` : ''}
-
-                <button class="btn btn--danger btn--sm btn-delete-team" data-id="${safeId}" data-name="${safeName}">
-                  Eliminar
-                </button>
-              </footer>
-            </article>
-          `;
-        }).join('')}
-      </div>
-    `;
-  }
-
-  // Búsqueda
-  if (searchInput) {
-    searchInput.oninput = (e) => {
-      const query = e.target.value.toLowerCase().trim();
-      const filtered = teamsData.filter(t => 
-        (t.name && t.name.toLowerCase().includes(query)) ||
-        (t.delegate && t.delegate.toLowerCase().includes(query))
-      );
-      render(filtered);
-    };
-  }
-
-  // Registrar Equipo
-  if (addBtn) {
-    addBtn.onclick = () => {
-      openAddTeamModal(activeSportId, async () => {
-        await renderTeamsView();
-      });
-    };
-  }
-
-  // Delegación de eventos para acciones en las tarjetas
-  container.onclick = async (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-
-    const safeId = btn.dataset.id;
-    const safeName = btn.dataset.name;
-
-    if (btn.classList.contains('btn-add-player')) {
-      openAddPlayerModal(safeId, safeName, async () => {
-        await renderTeamsView();
-      });
+    if (searchInput) {
+      searchInput.oninput = (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = teamsData.filter(t => 
+          (t.name && t.name.toLowerCase().includes(query)) ||
+          (t.delegate && t.delegate.toLowerCase().includes(query))
+        );
+        render(filtered);
+      };
     }
 
-    if (btn.classList.contains('btn-view-roster')) {
-      openRosterModal(safeId, safeName, async () => {
-        await renderTeamsView();
-      });
+    if (addBtn) {
+      addBtn.onclick = () => {
+        openAddTeamModal(activeSportId, async () => { await renderTeamsView(); });
+      };
     }
 
-    if (btn.classList.contains('btn-toggle-league')) {
-      const action = btn.dataset.action;
-      const team = teamsData.find(t => t.id === safeId);
-      if (team) {
-        team.leagueId = action === 'join' ? (activeLeague ? activeLeague.id : null) : null;
-        await updateTeam(team);
-        await renderTeamsView();
+    container.onclick = async (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      const safeId = btn.dataset.id;
+      const safeName = btn.dataset.name;
+
+      if (btn.classList.contains('btn-add-player')) {
+        const currentPlayers = playersCountMap[safeId] || 0;
+        const maxPlayers = getMaxPlayersForSport(activeSportId);
+        if (currentPlayers >= maxPlayers) {
+          AlertService.showError(`No puedes agregar más jugadores. El límite para ${SPORT_DISPLAY_NAMES[activeSportId]} es de ${maxPlayers}.`, 'PLANTILLA LLENA');
+          return;
+        }
+        openAddPlayerModal(safeId, safeName, activeSportId, currentPlayers, maxPlayers, async () => { await renderTeamsView(); });
       }
-    }
 
-    if (btn.classList.contains('btn-delete-team')) {
-      if (confirm(`¿Deseas eliminar el equipo "${safeName}"?`)) {
-        await deleteTeam(safeId);
-        await renderTeamsView();
+      if (btn.classList.contains('btn-view-roster')) {
+        openRosterModal(safeId, safeName, async () => { await renderTeamsView(); });
       }
-    }
-  };
 
-  render(teamsData);
+      if (btn.classList.contains('btn-join-league')) {
+        openLinkLeagueModal(safeId, safeName, activeSportId, async () => { await renderTeamsView(); });
+      }
+
+      if (btn.classList.contains('btn-leave-league')) {
+        showConfirmDialog(`¿Desvincular al equipo <strong>"${escapeHTML(safeName)}"</strong> de la liga actual?`, async () => {
+          await updateTeam({ id: safeId, leagueId: null });
+          AlertService.showSuccess('Equipo desvinculado.', 'ACCIÓN COMPLETADA');
+          await renderTeamsView();
+        });
+      }
+
+      if (btn.classList.contains('btn-delete-team')) {
+        showConfirmDialog(`¿Deseas eliminar el equipo <strong>"${escapeHTML(safeName)}"</strong>?`, async () => {
+          await deleteTeam(safeId);
+          AlertService.showWarning('Equipo eliminado.', 'EQUIPO BORRADO');
+          await renderTeamsView();
+        });
+      }
+    };
+
+    render(teamsData);
+
+  } catch (error) {
+    console.error('Error al renderizar equipos:', error);
+    container.innerHTML = '';
+    const errComp = document.createElement('error-state');
+    errComp.setError('Hubo un problema al cargar los equipos.', () => renderTeamsView());
+    container.appendChild(errComp);
+  }
 }
 
-// Modal de Creación con Selección de Deporte
 function openAddTeamModal(defaultSportId, onSaveCallback) {
   document.getElementById('dynamic-team-modal')?.remove();
 
@@ -208,7 +235,6 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
             <label class="form-group__label">Nombre del Equipo *</label>
             <input type="text" id="dyn-team-name" required placeholder="Ej: Deportivo Maracaibo" class="form-control" style="width: 100%; padding: 0.5rem;" />
           </div>
-
           <div class="form-group" style="margin-bottom: 1rem;">
             <label class="form-group__label">Deporte *</label>
             <select id="dyn-team-sport" required class="form-control" style="width: 100%; padding: 0.5rem;">
@@ -223,12 +249,10 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
               <option value="ajedrez">Ajedrez</option>
             </select>
           </div>
-
           <div class="form-group" style="margin-bottom: 1rem;">
             <label class="form-group__label">Delegado / Capitán</label>
             <input type="text" id="dyn-team-delegate" placeholder="Ej: Carlos Pérez" class="form-control" style="width: 100%; padding: 0.5rem;" />
           </div>
-
           <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
             <button type="button" id="dyn-team-cancel" class="btn btn--secondary">Cancelar</button>
             <button type="submit" class="btn btn--primary">Registrar</button>
@@ -254,40 +278,57 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
 
     if (!name) return;
 
-    // Sincronizar el deporte activo seleccionado para renderizar la vista correcta
     localStorage.setItem('active_sport_id', sportId);
 
     const activeLeague = await getActiveLeague();
     const leagueId = activeLeague ? activeLeague.id : null;
 
     await addTeam({ sportId, leagueId, name, delegate });
+    AlertService.showSuccess('Equipo registrado exitosamente.', '¡EQUIPO LISTO!');
     modalEl.remove();
     if (onSaveCallback) await onSaveCallback();
   };
 }
 
-function openAddPlayerModal(teamId, teamName, onSaveCallback) {
+async function openAddPlayerModal(teamId, teamName, sportId, currentCount, maxCount, onSaveCallback) {
   document.getElementById('dynamic-player-modal')?.remove();
+
+  let availableSpots = maxCount - currentCount;
+  const existingPlayers = await getPlayersByTeam(teamId);
+  const maxNumberUsed = existingPlayers.reduce((max, p) => Math.max(max, Number(p.number) || 0), 0);
+  const suggestedNumber = maxNumberUsed + 1;
+  const positions = getPositionsForSport(sportId);
 
   const modalHTML = `
     <div id="dynamic-player-modal" class="modal-overlay">
       <div class="modal-card">
         <h2 class="modal-card__title">Agregar Jugador</h2>
-        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">
           Equipo: <strong>${escapeHTML(teamName)}</strong>
+        </p>
+        <p id="available-spots-text" style="font-size: 0.8rem; color: #10b981; margin-bottom: 1.5rem; font-weight: bold;">
+          📋 Cupos disponibles: ${availableSpots} de ${maxCount}
         </p>
         <form id="dyn-player-form">
           <div class="form-group" style="margin-bottom: 1rem;">
             <label class="form-group__label">Nombre Completo *</label>
-            <input type="text" id="dyn-player-name" required placeholder="Ej: Roberto Carlos" class="form-control" style="width: 100%; padding: 0.5rem;" />
+            <input type="text" id="dyn-player-name" required placeholder="Ej: Roberto Carlos" class="form-control" style="width: 100%; padding: 0.5rem;" autofocus />
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label class="form-group__label">Número / Dorsal *</label>
-            <input type="number" id="dyn-player-number" min="0" max="99" required placeholder="10" class="form-control" style="width: 100%; padding: 0.5rem;" />
+          <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-group__label">Dorsal *</label>
+              <input type="number" id="dyn-player-number" min="0" max="99" required value="${suggestedNumber}" class="form-control" style="width: 100%; padding: 0.5rem;" />
+            </div>
+            <div class="form-group" style="flex: 2;">
+              <label class="form-group__label">Posición *</label>
+              <select id="dyn-player-position" required class="form-control" style="width: 100%; padding: 0.5rem;">
+                ${positions.map(pos => `<option value="${pos}">${pos}</option>`).join('')}
+              </select>
+            </div>
           </div>
-          <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button type="button" id="dyn-player-cancel" class="btn btn--secondary">Cancelar</button>
-            <button type="submit" class="btn btn--primary">Guardar</button>
+          <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: space-between; margin-top: 1.5rem;">
+            <button type="button" id="dyn-player-cancel" class="btn btn--secondary">Cerrar</button>
+            <button type="submit" class="btn btn--primary">+ Agregar y Seguir</button>
           </div>
         </form>
       </div>
@@ -297,18 +338,38 @@ function openAddPlayerModal(teamId, teamName, onSaveCallback) {
   document.body.insertAdjacentHTML('beforeend', modalHTML);
 
   const modalEl = document.getElementById('dynamic-player-modal');
-  document.getElementById('dyn-player-cancel').onclick = () => modalEl.remove();
+  const nameInput = document.getElementById('dyn-player-name');
+  const numberInput = document.getElementById('dyn-player-number');
+  const spotsText = document.getElementById('available-spots-text');
+
+  document.getElementById('dyn-player-cancel').onclick = async () => {
+    modalEl.remove();
+    if (onSaveCallback) await onSaveCallback();
+  };
 
   document.getElementById('dyn-player-form').onsubmit = async (e) => {
     e.preventDefault();
-    const name = document.getElementById('dyn-player-name').value.trim();
-    const number = document.getElementById('dyn-player-number').value;
+    const name = nameInput.value.trim();
+    const number = numberInput.value;
+    const position = document.getElementById('dyn-player-position').value;
 
     if (!name || !number) return;
 
-    await addPlayer({ teamId, name, number, position: 'Jugador' });
-    modalEl.remove();
-    if (onSaveCallback) await onSaveCallback();
+    await addPlayer({ teamId, name, number, position });
+    currentCount++;
+    availableSpots = maxCount - currentCount;
+
+    if (availableSpots <= 0) {
+      AlertService.showSuccess('Jugador agregado. ¡Plantilla completa!', 'LÍMITE ALCANZADO');
+      modalEl.remove();
+      if (onSaveCallback) await onSaveCallback();
+    } else {
+      AlertService.showSuccess(`${name} agregado correctamente.`, '¡REFUERZO LISTO!');
+      nameInput.value = '';
+      numberInput.value = Number(number) + 1;
+      nameInput.focus();
+      spotsText.textContent = `📋 Cupos disponibles: ${availableSpots} de ${maxCount}`;
+    }
   };
 }
 
@@ -319,7 +380,7 @@ function openRosterModal(teamId, teamName, onCloseCallback) {
     <div id="dynamic-roster-modal" class="modal-overlay">
       <div class="modal-card">
         <h2 class="modal-card__title">Plantilla: ${escapeHTML(teamName)}</h2>
-        <div id="dyn-players-list" style="max-height: 250px; overflow-y: auto; margin: 1rem 0;"></div>
+        <div id="dyn-players-list" style="max-height: 350px; overflow-y: auto; margin: 1rem 0;"></div>
         <div class="modal-actions" style="text-align: right;">
           <button type="button" id="dyn-roster-close" class="btn btn--secondary">Cerrar</button>
         </div>
@@ -337,16 +398,23 @@ function openRosterModal(teamId, teamName, onCloseCallback) {
 
   const loadPlayers = async () => {
     const list = document.getElementById('dyn-players-list');
+    list.innerHTML = `<loading-state message="Cargando plantilla..."></loading-state>`;
     const players = await getPlayersByTeam(teamId);
 
     if (!players || players.length === 0) {
-      list.innerHTML = `<p style="color: #94a3b8; font-size: 0.85rem; text-align: center;">Sin jugadores registrados.</p>`;
+      list.innerHTML = `<p style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 1rem;">Sin jugadores registrados.</p>`;
       return;
     }
 
     list.innerHTML = players.map(p => `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.05); margin-bottom: 0.3rem; border-radius: 4px;">
-        <span><strong>#${escapeHTML(p.number)}</strong> ${escapeHTML(p.name)}</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem; background: rgba(255,255,255,0.05); margin-bottom: 0.4rem; border-radius: 6px;">
+        <div style="display: flex; align-items: center; gap: 0.8rem;">
+          <span style="background: #10b981; color: #fff; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">#${escapeHTML(p.number)}</span>
+          <div>
+            <span style="font-weight: 500; color: #e2e8f0;">${escapeHTML(p.name)}</span><br>
+            <span style="font-size: 0.75rem; color: #10b981;">${escapeHTML(p.position || 'Sin posición')}</span>
+          </div>
+        </div>
         <button class="btn btn--danger btn--sm btn-del-p" data-id="${p.id}">X</button>
       </div>
     `).join('');
@@ -354,10 +422,132 @@ function openRosterModal(teamId, teamName, onCloseCallback) {
     list.querySelectorAll('.btn-del-p').forEach(btn => {
       btn.onclick = async () => {
         await deletePlayer(btn.dataset.id);
+        AlertService.showWarning('Jugador eliminado.', 'JUGADOR BORRADO');
         await loadPlayers();
       };
     });
   };
 
   loadPlayers();
+}
+
+async function openLinkLeagueModal(teamId, teamName, sportId, onSaveCallback) {
+  document.getElementById('dynamic-link-modal')?.remove();
+  
+  const allLeagues = await getAllLeagues();
+  const availableLeagues = allLeagues.filter(l => l.sport === sportId);
+
+  const modalHTML = `
+    <div id="dynamic-link-modal" class="modal-overlay">
+      <div class="modal-card">
+        <h2 class="modal-card__title">Vincular a Liga</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">
+          Equipo: <strong>${escapeHTML(teamName)}</strong>
+        </p>
+        
+        <div style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-primary);">Ligas en este Dispositivo</h3>
+          <div id="local-leagues-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+            ${availableLeagues.length === 0 ? '<p style="color: #94a3b8; font-size: 0.85rem;">No hay ligas de este deporte creadas aquí.</p>' : 
+            availableLeagues.map(l => `
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 0.5rem 0.75rem; border-radius: 6px;">
+                <div>
+                  <span style="font-weight: 500;">${escapeHTML(l.name)}</span><br>
+                  <span style="font-size: 0.7rem; color: ${l.role === 'guest' ? '#f59e0b' : '#10b981'}; font-weight: bold;">${l.role === 'guest' ? 'INVITADO' : 'PROPIETARIO'}</span>
+                </div>
+                <button class="btn btn--primary btn--sm btn-join-local" data-id="${l.id}">Unirse</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 1.5rem; border-top: 1px solid var(--border-card); padding-top: 1rem;">
+          <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.75rem;">¿La liga está en otro dispositivo?</p>
+          
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <button id="btn-scan-qr" class="btn btn--secondary" style="flex: 1;">📷 Escanear QR</button>
+            <button id="btn-upload-json" class="btn btn--secondary" style="flex: 1;">📁 Subir JSON</button>
+            <input type="file" id="import-json-input" accept=".json" style="display: none;">
+          </div>
+
+          <div id="qr-video-container" style="display: none; margin-top: 1rem; border-radius: 8px; overflow: hidden;">
+            <video id="qr-video" style="width: 100%; height: auto;" autoplay muted playsinline></video>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">* Requiere permisos de cámara (Chrome/Edge)</p>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1.5rem; text-align: right;">
+          <button type="button" id="dyn-link-cancel" class="btn btn--secondary">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modalEl = document.getElementById('dynamic-link-modal');
+  const videoContainer = document.getElementById('qr-video-container');
+  const videoEl = document.getElementById('qr-video');
+  const fileInput = document.getElementById('import-json-input');
+
+  document.getElementById('dyn-link-cancel').onclick = () => {
+    stopQRScanner();
+    modalEl.remove();
+    if (onSaveCallback) onSaveCallback();
+  };
+
+  modalEl.querySelectorAll('.btn-join-local').forEach(btn => {
+    btn.onclick = async () => {
+      const leagueId = btn.dataset.id;
+      await updateTeam({ id: teamId, leagueId });
+      AlertService.showSuccess('Equipo vinculado a la liga local.', 'ACCIÓN COMPLETADA');
+      modalEl.remove();
+      if (onSaveCallback) await onSaveCallback();
+    };
+  });
+
+  document.getElementById('btn-scan-qr').onclick = async () => {
+    videoContainer.style.display = 'block';
+    await startQRScanner(videoEl, async (rawData) => {
+      try {
+        const result = await handleImportData(rawData);
+        if (result.success && result.league) {
+          await updateTeam({ id: teamId, leagueId: result.league.id });
+          AlertService.showChampion(`Te has unido a ${result.league.name} como invitado.`, '¡LIGA IMPORTADA!');
+          stopQRScanner();
+          modalEl.remove();
+          if (onSaveCallback) await onSaveCallback();
+        }
+      } catch (err) {
+        AlertService.showError(err.message, 'ERROR DE QR');
+        stopQRScanner();
+        videoContainer.style.display = 'none';
+      }
+    }, (err) => {
+      AlertService.showError('No se pudo acceder a la cámara. Usa Subir JSON en su lugar.', 'ERROR DE CÁMARA');
+    });
+  };
+
+  document.getElementById('btn-upload-json').onclick = () => fileInput.click();
+
+  fileInput.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      await importLeagueFromJsonFile(file);
+      const allLeaguesUpdated = await getAllLeagues();
+      const importedLeague = allLeaguesUpdated.find(l => l.name.includes(file.name.replace('.json', '')) && l.role === 'guest');
+      
+      if (importedLeague) {
+        await updateTeam({ id: teamId, leagueId: importedLeague.id });
+        AlertService.showSuccess('Liga importada y equipo vinculado.', 'ACCIÓN COMPLETADA');
+        modalEl.remove();
+        if (onSaveCallback) await onSaveCallback();
+      } else {
+        AlertService.showWarning('Archivo importado, pero no se encontró la liga para vincular.');
+      }
+    } catch (err) {
+      AlertService.showError(err.message, 'ERROR DE ARCHIVO');
+    }
+  };
 }
