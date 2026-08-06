@@ -1,11 +1,16 @@
-import { createLeague, setActiveLeague, updateLeague } from '../db/repositories/leagues.js';
+import { createLeague, setActiveLeague, updateLeague, getActiveLeague } from '../db/repositories/leagues.js';
 import { addTeam, getTeamsByLeague, updateTeam } from '../db/repositories/teams.js';
 import { getPlayersByTeam } from '../db/repositories/players.js';
-import { getMatchesByLeague, updateMatch } from '../db/repositories/matches.js';
+import { getMatchesByLeague, updateMatch, bulkInsertFullMatches } from '../db/repositories/matches.js';
 import { MatchEventRepository } from '../db/repositories/matchEvent.js';
 
+/**
+ * 
+ * @param {string} rawData -
+ */
 export async function handleImportData(rawData) {
   let parsed;
+
   try {
     parsed = JSON.parse(rawData);
   } catch (err) {
@@ -21,14 +26,50 @@ export async function handleImportData(rawData) {
   switch (type) {
     case 'LINK_LEAGUE': {
       if (!payload || !payload.leagueName) throw new Error('Información de liga incompleta en el QR.');
+      
+      // Creamos la liga usando el mismo ID del Host
       const newLeague = await createLeague({
+        id: payload.leagueId,
         name: payload.leagueName,
         sport: payload.sport || 'futbol_sala',
         mode: payload.mode || 'Liga',
         isActive: false,
         role: 'guest'
       });
-      return { success: true, league: newLeague, message: `Liga "${newLeague.name}" importada como invitado.` };
+
+      // Importamos los equipos si vienen en el QR
+      if (payload.teams && payload.teams.length > 0) {
+        for (const t of payload.teams) {
+          await addTeam({ 
+            id: t.id, 
+            name: t.name, 
+            sportId: t.sportId, 
+            delegate: t.delegate, 
+            leagueId: newLeague.id 
+          });
+        }
+      }
+
+      // Importamos el fixture completo si viene en el QR
+      if (payload.matches && payload.matches.length > 0) {
+        await bulkInsertFullMatches(payload.matches.map(m => ({
+          id: m.id,
+          leagueId: newLeague.id,
+          homeTeamId: m.homeTeamId,
+          awayTeamId: m.awayTeamId,
+          scoreHome: m.scoreHome,
+          scoreAway: m.scoreAway,
+          status: m.status,
+          date: m.date,
+          round: m.round
+        })));
+      }
+
+      return { 
+        success: true, 
+        league: newLeague, 
+        message: `Liga "${newLeague.name}" importada con fixture y equipos.` 
+      };
     }
 
     case 'IMPORT_TEAM': {
@@ -67,6 +108,10 @@ export async function handleImportData(rawData) {
   }
 }
 
+/**
+ * EXPORTAR LIGA A ARCHIVO JSON
+ * Recopila todos los datos de la liga y dispara la descarga en el navegador.
+ */
 export async function exportLeagueToJson(leagueData) {
   try {
     const teams = await getTeamsByLeague(leagueData.id);
@@ -74,6 +119,7 @@ export async function exportLeagueToJson(leagueData) {
       const players = await getPlayersByTeam(team.id);
       return { ...team, players };
     }));
+
     const matches = await getMatchesByLeague(leagueData.id);
     const matchesWithEvents = await Promise.all(matches.map(async (match) => {
       const events = await MatchEventRepository.getEventsByMatch(match.id);
@@ -100,6 +146,10 @@ export async function exportLeagueToJson(leagueData) {
   }
 }
 
+/**
+ * IMPORTAR LIGA DESDE ARCHIVO JSON
+ * Lee el archivo seleccionado por el usuario y lo guarda en IndexedDB.
+ */
 export async function importLeagueFromJsonFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

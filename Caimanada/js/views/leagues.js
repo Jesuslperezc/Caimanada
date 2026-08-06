@@ -616,13 +616,33 @@ async function openShareLeagueModal(leagueData, exportType) {
 
   document.getElementById('btn-show-qr').onclick = async () => {
     const matches = await getMatchesByLeague(leagueData.id);
-    const qrPayload = buildQRPayload(exportType === 'update' ? 'LEAGUE_UPDATE' : 'LINK_LEAGUE', {
+    let payload = {
       leagueId: leagueData.id,
       leagueName: leagueData.name,
       sport: leagueData.sport,
-      mode: leagueData.mode,
-      matches: matches.map(m => ({ id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway }))
-    });
+      mode: leagueData.mode
+    };
+
+    if (exportType === 'initial') {
+      // Incluimos equipos y partidos completos para la primera sincronización del Guest
+      const teams = await getTeamsByLeague(leagueData.id);
+      payload.teams = teams.map(t => ({ id: t.id, name: t.name, sportId: t.sportId, delegate: t.delegate }));
+      payload.matches = matches.map(m => ({ 
+        id: m.id, 
+        status: m.status, 
+        scoreHome: m.scoreHome, 
+        scoreAway: m.scoreAway, 
+        homeTeamId: m.homeTeamId, 
+        awayTeamId: m.awayTeamId, 
+        date: m.date, 
+        round: m.round || 1 
+      }));
+    } else {
+      // En las actualizaciones, solo enviamos los marcadores
+      payload.matches = matches.map(m => ({ id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway }));
+    }
+
+    const qrPayload = buildQRPayload(exportType === 'update' ? 'LEAGUE_UPDATE' : 'LINK_LEAGUE', payload);
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
     document.getElementById('qr-image').src = qrApiUrl;
     document.getElementById('qr-display-container').style.display = 'flex';

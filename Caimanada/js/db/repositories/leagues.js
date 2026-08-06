@@ -20,7 +20,6 @@ export async function getActiveLeague() {
   if (!Array.isArray(allLeagues) || allLeagues.length === 0) return null;
   return allLeagues.find(league => league.isActive === true) || null;
 }
-
 export async function createLeague(leagueData) {
   const allLeagues = await getAllLeagues();
   const isFirstLeague = allLeagues.length === 0;
@@ -29,20 +28,20 @@ export async function createLeague(leagueData) {
   const durationDays = Number(leagueData.durationDays) || 7; 
   const endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
-   const newLeague = {
-    id: `league_${Date.now()}`,
+  const newLeague = {
+    id: leagueData.id || `league_${Date.now()}`, // <--- Acepta ID importado o crea uno nuevo
     name: leagueData.name ? leagueData.name.trim() : '',
     sport: leagueData.sport || 'Fútbol',
     season: leagueData.season ? leagueData.season.trim() : '',
     mode: leagueData.mode || 'Liga',
     durationDays: durationDays,
     description: leagueData.description ? leagueData.description.trim() : '',
-    createdAt: now.toISOString(),
+    createdAt: leagueData.createdAt || now.toISOString(), // <--- Acepta fecha original
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, 
-    startDate: now.toISOString(),
+    startDate: leagueData.startDate || now.toISOString(),
     endDate: endDate.toISOString(),
     isActive: leagueData.isActive ?? isFirstLeague,
-    role: leagueData.role || 'owner' 
+    role: leagueData.role || 'owner'
   };
 
   await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
