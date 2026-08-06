@@ -7,6 +7,8 @@ import { AlertService } from '../components/alert.js';
 import { getMaxPlayersForSport, getPositionsForSport } from '../utils/sport-terms.js';
 import { startQRScanner, stopQRScanner } from '../utils/qr.js';
 import { handleImportData, importLeagueFromJsonFile } from '../utils/export-import.js';
+// 1. IMPORTAMOS LA SESIÓN
+import { getCurrentUser } from '../utils/session.js';
 
 const SPORT_DISPLAY_NAMES = {
   futbol_sala: 'Futbolito / Futsal',
@@ -223,8 +225,12 @@ export async function renderTeamsView() {
   }
 }
 
+// 2. MODIFICAMOS EL MODAL PARA ASIGNAR AL USUARIO COMO DELEGADO
 function openAddTeamModal(defaultSportId, onSaveCallback) {
   document.getElementById('dynamic-team-modal')?.remove();
+
+  // Obtenemos al usuario que inició sesión
+  const currentUser = getCurrentUser();
 
   const modalHTML = `
     <div id="dynamic-team-modal" class="modal-overlay">
@@ -251,7 +257,15 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
           </div>
           <div class="form-group" style="margin-bottom: 1rem;">
             <label class="form-group__label">Delegado / Capitán</label>
-            <input type="text" id="dyn-team-delegate" placeholder="Ej: Carlos Pérez" class="form-control" style="width: 100%; padding: 0.5rem;" />
+            <!-- Input bloqueado (readonly) con el nombre del usuario actual -->
+            <input 
+              type="text" 
+              id="dyn-team-delegate" 
+              value="${currentUser ? escapeHTML(currentUser.name) : ''}" 
+              readonly 
+              class="form-control" 
+              style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.05); cursor: not-allowed;" 
+            />
           </div>
           <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
             <button type="button" id="dyn-team-cancel" class="btn btn--secondary">Cancelar</button>
@@ -274,6 +288,7 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
     e.preventDefault();
     const name = document.getElementById('dyn-team-name').value.trim();
     const sportId = document.getElementById('dyn-team-sport').value;
+    // Tomamos el valor del input (que ya tiene el nombre del usuario)
     const delegate = document.getElementById('dyn-team-delegate').value.trim();
 
     if (!name) return;

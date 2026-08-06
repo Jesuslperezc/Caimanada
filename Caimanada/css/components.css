@@ -105,12 +105,44 @@ img {
     padding: 0.35rem 1.2rem 0.35rem 0.6rem !important;
   }
 
+
   /* Texto del selector fluido */
   .sport-badge__select {
     font-size: 0.8rem !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+
+}
+/* === AVATAR DE USUARIO EN NAVBAR === */
+.app-header__user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-primary, #00A86B);
+  margin-left: 1.5rem; 
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.app-header__user-avatar:hover {
+  transform: scale(1.05);
+}
+
+@media (max-width: 48em) {
+  .app-header__user-avatar {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    margin-left: 0;
+    z-index: 10;
   }
 }
 /* Deporte Seleccionado */
