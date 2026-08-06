@@ -72,30 +72,27 @@ export async function deleteMatchesByLeague(leagueId) {
   });
   return true;
 }
-
 export async function bulkInsertFullMatches(matchesList) {
   await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
     const store = tx.objectStore(STORE_NAME);
     matchesList.forEach(match => {
-      store.add({
-        id: match.id,
+      const newMatch = {
+        id: match.id || `match_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         leagueId: match.leagueId,
         round: match.round || 1,
         homeTeamId: match.homeTeamId,
         awayTeamId: match.awayTeamId,
-        scoreHome: null,
-        scoreAway: null,
-        status: 'pending',
-        date: match.date || null,
-        winnerGoesToMatchId: match.winnerGoesToMatchId || null,
-        slot: match.slot || null
-      });
+        scoreHome: match.scoreHome ?? null,
+        scoreAway: match.scoreAway ?? null,
+        status: match.status || 'pending',
+        date: match.date || null
+      };
+      store.put(newMatch); // <--- CAMBIADO A put
     });
     return null;
   });
   return true;
 }
-
 export async function updateMatch(matchData) {
   if (!matchData || !matchData.id) return null;
   await executeTransaction(STORE_NAME, 'readwrite', (tx) => {

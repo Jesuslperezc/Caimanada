@@ -29,14 +29,14 @@ export async function createLeague(leagueData) {
   const endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
   const newLeague = {
-    id: leagueData.id || `league_${Date.now()}`, // <--- Acepta ID importado o crea uno nuevo
+    id: leagueData.id || `league_${Date.now()}`,
     name: leagueData.name ? leagueData.name.trim() : '',
     sport: leagueData.sport || 'Fútbol',
     season: leagueData.season ? leagueData.season.trim() : '',
     mode: leagueData.mode || 'Liga',
     durationDays: durationDays,
     description: leagueData.description ? leagueData.description.trim() : '',
-    createdAt: leagueData.createdAt || now.toISOString(), // <--- Acepta fecha original
+    createdAt: leagueData.createdAt || now.toISOString(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, 
     startDate: leagueData.startDate || now.toISOString(),
     endDate: endDate.toISOString(),
@@ -46,6 +46,10 @@ export async function createLeague(leagueData) {
 
   await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
     const store = tx.objectStore(STORE_NAME);
+    // Si viene con ID (es una importación), usamos put para que no fallé por duplicado
+    if (leagueData.id) {
+      return store.put(newLeague);
+    }
     return store.add(newLeague);
   });
 
