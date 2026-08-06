@@ -1,4 +1,4 @@
-import { executeTransaction } from '../db.js';
+import { executeTransaction } from '../db/db.js';
 import { getActiveLeague, updateLeague } from '../db/repositories/leagues.js';
 import { getTeamsByLeague } from '../db/repositories/teams.js';
 import { getPlayersByTeam } from '../db/repositories/players.js';
