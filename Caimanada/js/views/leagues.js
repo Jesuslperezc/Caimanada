@@ -1,13 +1,12 @@
 import { getAllLeagues, getActiveLeague, createLeague, setActiveLeague, deleteLeague, updateLeague } from '../db/repositories/leagues.js';
 import { getTeamsByLeague } from '../db/repositories/teams.js';
+import { getPlayersByTeam } from '../db/repositories/players.js'; 
+import { MatchEventRepository } from '../db/repositories/matchEvent.js'; 
 import { getMatchesByLeague } from '../db/repositories/matches.js';
 import { renderLeagueStatsChart } from '../components/statsChart.js';
-import { startQRScanner, stopQRScanner } from '../utils/qr.js';
-// 1. IMPORTAMOS la función de exportación y la de importación por QR
+import { startQRScanner, stopQRScanner, buildQRPayload } from '../utils/qr.js';
 import { handleImportData, exportLeagueToJson } from '../utils/export-import.js';
-// Ajusta esta ruta a donde tengas tu AlertService
 import { AlertService } from '../components/alert.js'; 
-
 const SPORT_DISPLAY_NAMES = {
   futbol_sala: 'Futbolito / Futsal',
   futbol_campo: 'Fútbol Campo',
@@ -339,15 +338,10 @@ function setupCardEvents(leagues) {
     }
 
     // 3. AÑADIMOS EL EVENTO PARA EXPORTAR
-    if (target.classList.contains('btn-export-league')) {
+       if (target.classList.contains('btn-export-league')) {
       const league = leagues.find(l => l.id === leagueId);
       if (league) {
-        try {
-          await exportLeagueToJson(league);
-          AlertService.showSuccess('Descargando archivo JSON de la liga...', 'EXPORTACIÓN LISTA');
-        } catch (err) {
-          AlertService.showError(err.message || 'No se pudo exportar la liga.');
-        }
+        openShareLeagueModal(league);
       }
       return;
     }
@@ -436,4 +430,137 @@ function showConfirmDialog(messageHTML, onConfirmCallback) {
     modalEl.remove();
     if (onConfirmCallback) await onConfirmCallback();
   };
+}
+async function openShareLeagueModal(leagueData) {
+  document.getElementById('dynamic-share-modal')?.remove();
+
+  const modalHTML = `
+    <div id="dynamic-share-modal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 420px;">
+        <h2 class="modal-card__title">Compartir Liga</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">
+          Comparte el archivo JSON para que importen toda la liga, o muestra el código QR para que otros equipos se unan rápidamente como invitados.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          
+          <!-- Botón Compartir WhatsApp / Descargar -->
+          <button id="btn-share-whatsapp" class="btn btn--primary" style="width: 100%;">
+            📤 Compartir Archivo JSON
+          </button>
+
+          <!-- Separador -->
+          <div style="text-align: center; color: #64748b; font-size: 0.8rem; margin: 0.5rem 0;">- O -</div>
+
+          <!-- Botón Mostrar QR -->
+          <button id="btn-show-qr" class="btn btn--secondary" style="width: 100%;">
+            📱 Generar Código QR de Invitación
+          </button>
+
+          <!-- Contenedor del QR (Oculto por defecto) -->
+          <div id="qr-display-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
+            <img id="qr-image" src="" alt="Código QR de Liga" style="width: 220px; height: 220px;" />
+            <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para unirte a "${escapeHTML(leagueData.name)}"</p>
+          </div>
+
+        </div>
+
+        <div class="modal-actions" style="margin-top: 2rem; text-align: right;">
+          <button type="button" id="dyn-share-cancel" class="btn btn--secondary">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modalEl = document.getElementById('dynamic-share-modal');
+
+  document.getElementById('dyn-share-cancel').onclick = () => modalEl.remove();
+
+  // 1. Lógica Compartir por WhatsApp / Descargar
+    // 1. Lógica Compartir por WhatsApp / Descargar
+  document.getElementById('btn-share-whatsapp').onclick = async () => {
+    try {
+      // Obtenemos el JSON usando tu función existente
+      const jsonString = await prepareLeagueJsonString(leagueData);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const fileName = `CaimanaDa_${leagueData.name.replace(/\s/g, '_')}.json`;
+      
+      // Verificamos si es un dispositivo móvil real (con pantalla táctil)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      // Si es móvil y soporta compartir archivos, usamos Web Share API
+      if (isMobile && navigator.canShare && navigator.canShare({ files: [new File([blob], fileName)] })) {
+        const file = new File([blob], fileName, { type: 'application/json' });
+        await navigator.share({
+          title: 'Liga CaimanaDa',
+          text: `Aquí está la liga ${leagueData.name} para CaimanaDa`,
+          files: [file]
+        });
+        AlertService.showSuccess('Liga compartida.', 'ACCIÓN COMPLETADA');
+      } else {
+        // Si es PC (o no soporta compartir), forzamos la descarga directa
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.style.display = 'none'; // Lo ocultamos por si acaso
+        document.body.appendChild(a);
+        a.click();
+        
+        // Limpiamos la memoria y el DOM
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+
+        AlertService.showSuccess('Archivo descargado. Ábrelo en WhatsApp Web para enviarlo.', 'DESCARGA LISTA');
+      }
+    } catch (err) {
+      console.error('Error al compartir:', err);
+      AlertService.showError('No se pudo compartir el archivo.', 'ERROR');
+    }
+  };
+  // 2. Lógica Mostrar QR
+  document.getElementById('btn-show-qr').onclick = async () => {
+    const qrContainer = document.getElementById('qr-display-container');
+    const qrImage = document.getElementById('qr-image');
+    
+    // Construimos el payload ligero para el QR
+    const qrPayload = buildQRPayload('LINK_LEAGUE', {
+      leagueName: leagueData.name,
+      sport: leagueData.sport,
+      mode: leagueData.mode
+    });
+
+    // Usamos una API pública para generar la imagen del QR
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
+    
+    qrImage.src = qrApiUrl;
+    qrContainer.style.display = 'flex';
+  };
+}
+
+// Función helper para obtener el string del JSON (para no romper tu export-import.js)
+async function prepareLeagueJsonString(leagueData) {
+  const teams = await getTeamsByLeague(leagueData.id);
+  const teamsWithPlayers = await Promise.all(teams.map(async (team) => {
+    const players = await getPlayersByTeam(team.id);
+    return { ...team, players };
+  }));
+  const matches = await getMatchesByLeague(leagueData.id);
+  const matchesWithEvents = await Promise.all(matches.map(async (match) => {
+    const events = await MatchEventRepository.getEventsByMatch(match.id);
+    return { ...match, events };
+  }));
+
+  return JSON.stringify({
+    app: 'CaimanaDa',
+    version: '1.0',
+    type: 'FULL_BACKUP',
+    exportedAt: new Date().toISOString(),
+    league: leagueData,
+    teams: teamsWithPlayers,
+    matches: matchesWithEvents
+  }, null, 2);
 }
