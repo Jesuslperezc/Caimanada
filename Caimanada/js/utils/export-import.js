@@ -24,7 +24,7 @@ export async function handleImportData(rawData) {
   const { type, payload } = parsed;
 
   switch (type) {
-    case 'LINK_LEAGUE': {
+       case 'LINK_LEAGUE': {
       if (!payload || !payload.leagueId || !payload.leagueName) throw new Error('Información de liga incompleta en el QR.');
       
       const now = new Date();
@@ -44,7 +44,6 @@ export async function handleImportData(rawData) {
         role: 'guest'
       };
 
-      // TRANSACCIÓN ATÓMICA: Se garantiza que Liga, Equipos y Partidos se guarden juntos o falle todo.
       await executeTransaction(['leagues', 'teams', 'matches'], 'readwrite', async (tx) => {
         const leagueStore = tx.objectStore('leagues');
         leagueStore.put(newLeague);
@@ -52,6 +51,7 @@ export async function handleImportData(rawData) {
         if (payload.teams && payload.teams.length > 0) {
           const teamStore = tx.objectStore('teams');
           payload.teams.forEach(t => {
+            if (!t.id) return; // PROTECCIÓN: Saltar si el equipo no trae ID
             teamStore.put({
               id: t.id,
               name: t.name,
@@ -67,6 +67,7 @@ export async function handleImportData(rawData) {
         if (payload.matches && payload.matches.length > 0) {
           const matchStore = tx.objectStore('matches');
           payload.matches.forEach(m => {
+            if (!m.id) return; // PROTECCIÓN: Saltar si el partido no trae ID
             matchStore.put({
               id: m.id,
               leagueId: newLeague.id,
@@ -76,7 +77,9 @@ export async function handleImportData(rawData) {
               scoreAway: m.scoreAway ?? null,
               status: m.status || 'pending',
               date: m.date || null,
-              round: m.round || 1
+              round: m.round || 1,
+              slot: m.slot || null,
+              winnerGoesToMatchId: m.winnerGoesToMatchId || null
             });
           });
         }
@@ -95,7 +98,7 @@ export async function handleImportData(rawData) {
       await executeTransaction(['teams'], 'readwrite', (tx) => {
         const store = tx.objectStore('teams');
         store.put({
-          id: payload.id, // Respetamos el ID original para evitar duplicados si se escanea 2 veces
+          id: payload.id || `team_${Date.now()}`,
           leagueId: payload.leagueId,
           sportId: payload.sportId || 'futbol_sala',
           name: payload.name,
@@ -107,7 +110,6 @@ export async function handleImportData(rawData) {
       
       return { success: true, message: `El equipo "${payload.name}" se ha importado a tu liga correctamente.` };
     }
-
     case 'LEAGUE_UPDATE': {
       if (!payload || !payload.matches || !payload.leagueId) throw new Error('Actualización incompleta.');
       

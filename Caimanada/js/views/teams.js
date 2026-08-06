@@ -221,10 +221,8 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
     const delegate = document.getElementById('dyn-team-delegate').value.trim();
     if (!name) return;
     localStorage.setItem('active_sport_id', sportId);
-    const activeLeague = await getActiveLeague();
-    const leagueId = activeLeague ? activeLeague.id : null;
-    await addTeam({ sportId, leagueId, name, delegate });
-    AlertService.showSuccess('Equipo registrado exitosamente.', '¡EQUIPO LISTO!');
+    await addTeam({ sportId, leagueId: null, name, delegate }); 
+    AlertService.showSuccess('Equipo registrado exitosamente. Escanea su QR para unirlo a una liga.', '¡EQUIPO LISTO!');
     modalEl.remove();
     if (onSaveCallback) await onSaveCallback();
   };
@@ -339,7 +337,6 @@ function openRosterModal(teamId, teamName, onCloseCallback) {
   };
   loadPlayers();
 }
-
 async function openShareTeamModal(teamData) {
   document.getElementById('dynamic-share-team-modal')?.remove();
   const activeSportId = getActiveSport();
@@ -364,15 +361,16 @@ async function openShareTeamModal(teamData) {
   document.getElementById('dyn-share-team-cancel').onclick = () => modalEl.remove();
 
   const qrPayload = buildQRPayload('IMPORT_TEAM', {
+    id: teamData.id, // <--- ESTO ES VITAL PARA QUE NO CRASHEE INDEXEDDB
     name: teamData.name,
     leagueId: teamData.leagueId, 
     delegate: teamData.delegate,
-    sportId: activeSportId
+    sportId: activeSportId,
+    color: teamData.color // <--- Mantenemos el color original del equipo
   });
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
   document.getElementById('qr-team-image').src = qrApiUrl;
 }
-
 export async function setupScanTeamButton() {
   const addBtn = document.getElementById('btn-add-team');
   let scanBtn = document.getElementById('btn-scan-team');
