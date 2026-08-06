@@ -1,13 +1,13 @@
 /* Logo */
-svg {
+img {
   display: block;
   max-width: 100%;
   height: auto;
 }
 
 .nav-mobile__icon,
-.app-header__logo-svg {
-  transition: transform 0.2s ease, stroke 0.2s ease, fill 0.2s ease;
+.app-header__logo-img {
+  transition: transform 0.2s ease;
 }
 
 /* Logo y menu */
@@ -38,15 +38,19 @@ svg {
   text-decoration: none;
 }
 
-.app-header__logo-svg {
+/* Estilos de la imagen del logo en Escritorio */
+.app-header__logo-img {
   height: 40px;
   width: auto;
+  max-width: 100%;
+  display: block;
+  object-fit: contain;
 }
 
-.app-header__brand:hover .app-header__logo-svg {
+.app-header__brand:hover .app-header__logo-img {
   transform: scale(1.03);
-
 }
+
 /* === HEADER MÓVIL (Unidades Relativas) === */
 @media (max-width: 48em) { /* 48em = 768px */
   .app-header {
@@ -63,24 +67,25 @@ svg {
   .app-header__container {
     position: relative !important;
     display: flex !important;
-    justify-content: center !important;
+    justify-content: center !important; /* Centra el selector */
     align-items: center !important;
     height: 100% !important;
     padding: 0 0.75rem !important;
   }
 
-  /* 1. Logo pegado a la izquierda */
+  /* 1. Logo pegado a la izquierda y más grande */
   .app-header__brand {
     position: absolute !important;
-    left: 0.75rem !important;
+    left: 0.5rem !important; /* Pegado a la izquierda */
     top: 50% !important;
     transform: translateY(-50%) !important;
   }
   
-  /* Tamaño del logo fluido */
-  .app-header__logo-svg {
-    height: 2rem !important; /* Equivalente a 32px */
+  .app-header__logo-img {
+    height: 2.5rem !important; /* Más grande en móvil (40px) */
     width: auto !important;
+    max-width: 50vw !important; /* Ocupa máximo la mitad de la pantalla */
+    object-fit: contain !important;
   }
 
   .nav-desktop {

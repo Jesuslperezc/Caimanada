@@ -16,30 +16,16 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-
   <!-- ENCABEZADO Y NAVEGACIÓN SUPERIOR -->
   <header class="app-header" id="app-header">
     <div class="app-header__container">
       
+      <!-- Logo (Imagen PNG) -->
       <a href="#dashboard" class="app-header__brand" id="brand-logo" aria-label="Ir al Inicio de CaimanaDa">
-        <svg class="app-header__logo-svg" viewBox="0 0 520 140" aria-hidden="true">
-          <g transform="translate(18, 12) scale(1.1)">
-            <polygon points="15,52 47,21 84,30 94,46 71,56 51,51 29,72" fill="#00A86B" />
-            <polygon points="28,61 50,58 74,68 42,82" fill="#006847" />
-            <polygon points="75,26 84,18 87,29" fill="#00A86B" />
-            <polygon points="66,36 72,31 71,39" fill="#FFFFFF" />
-          </g>
-          <text x="135" y="85" font-family="system-ui, sans-serif" font-weight="900" font-size="56" fill="#FFFFFF">
-            aimana<tspan fill="#00A86B">D</tspan>a
-          </text>
-        </svg>
+        <img src="assets/Caimanada.png" alt="Logo CaimanaDa" class="app-header__logo-img">
       </a>
-      <div class="sport-badge" id="active-sport-badge" role="status" aria-live="polite">
-      
-        <select class="sport-badge__select" id="active-sport-selector" title="Cambiar deporte activo">
-          <!-- Las opciones se inyectarán por JavaScript -->
-        </select>
-      </div>
+
+      <!-- Navegación Escritorio -->
       <nav class="nav-desktop" id="nav-desktop" aria-label="Navegación Principal">
         <ul class="nav-desktop__list">
           <li class="nav-desktop__item">
@@ -57,9 +43,16 @@
         </ul>
       </nav>
 
+      <!-- Selector de Deporte -->
+      <div class="sport-badge" id="active-sport-badge" role="status" aria-live="polite">
+
+        <select class="sport-badge__select" id="active-sport-selector" title="Cambiar deporte activo">
+          <!-- Las opciones se inyectarán por JavaScript -->
+        </select>
+      </div>
+
     </div>
   </header>
-
 
   <!-- VISTAS DE LA SPA -->
   <main class="app-content" id="app-router-view">
