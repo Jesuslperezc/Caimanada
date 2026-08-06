@@ -1,6 +1,10 @@
 // db.js (o como lo hayas llamado)
 const DB_NAME = 'caimanada_db';
+<<<<<<< HEAD
 const DB_VERSION = 2; // Subimos la versión a 2 para que aplique el onupgradeneeded y cree el store 'events'
+=======
+const DB_VERSION = 2;
+>>>>>>> 4c7aa39b3c5f7c402e069f980dcecb5ff272025e
 
 let dbInstance = null;
 
@@ -21,8 +25,14 @@ export function openDB() {
         leaguesStore.createIndex('name', 'name', { unique: false }); // Índice exigido
       }
 
+      let teamsStore;
       if (!db.objectStoreNames.contains('teams')) {
-        const teamsStore = db.createObjectStore('teams', { keyPath: 'id' });
+        teamsStore = db.createObjectStore('teams', { keyPath: 'id' });
+      } else {
+        teamsStore = event.target.transaction.objectStore('teams');
+      }
+
+      if (!teamsStore.indexNames.contains('leagueId')) {
         teamsStore.createIndex('leagueId', 'leagueId', { unique: false });
         teamsStore.createIndex('name', 'name', { unique: false }); // Índice exigido
       }
@@ -31,6 +41,9 @@ export function openDB() {
         const playersStore = db.createObjectStore('players', { keyPath: 'id' });
         playersStore.createIndex('teamId', 'teamId', { unique: false });
         playersStore.createIndex('name', 'name', { unique: false }); // Índice exigido
+      }
+      if (!teamsStore.indexNames.contains('sportId')) {
+        teamsStore.createIndex('sportId', 'sportId', { unique: false });
       }
 
       if (!db.objectStoreNames.contains('matches')) {
@@ -42,11 +55,17 @@ export function openDB() {
         matchesStore.createIndex('status', 'status', { unique: false }); // Índice exigido
       }
 
+<<<<<<< HEAD
       // NUEVO: Object Store para los eventos (MatchEvents)
       if (!db.objectStoreNames.contains('events')) {
         const eventsStore = db.createObjectStore('events', { keyPath: 'id' });
         eventsStore.createIndex('matchId', 'matchId', { unique: false });
         eventsStore.createIndex('playerId', 'playerId', { unique: false });
+=======
+      if (!db.objectStoreNames.contains('players')) {
+        const playersStore = db.createObjectStore('players', { keyPath: 'id' });
+        playersStore.createIndex('teamId', 'teamId', { unique: false });
+>>>>>>> 4c7aa39b3c5f7c402e069f980dcecb5ff272025e
       }
     };
 
