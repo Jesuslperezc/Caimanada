@@ -1,5 +1,6 @@
 import { renderLeaguesView } from '../views/leagues.js';
 import { renderTeamsView } from '../views/teams.js';
+import { renderMatchesView } from '../views/matches.js';
 
 export function handleRoute() {
   const rawHash = window.location.hash.trim();
@@ -32,6 +33,8 @@ export function handleRoute() {
     renderLeaguesView().catch(err => console.error('Error renderizando ligas:', err));
   } else if (cleanName === 'teams') {
     renderTeamsView().catch(err => console.error('Error renderizando equipos:', err));
+  } else if (cleanName === 'matches') { 
+    renderMatchesView().catch(err => console.error('Error renderizando partidos:', err));
   }
 }
 

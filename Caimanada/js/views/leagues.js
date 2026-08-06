@@ -2,11 +2,13 @@ import { getAllLeagues, getActiveLeague, createLeague, setActiveLeague, deleteLe
 import { getTeamsByLeague } from '../db/repositories/teams.js';
 import { getPlayersByTeam } from '../db/repositories/players.js'; 
 import { MatchEventRepository } from '../db/repositories/matchEvent.js'; 
-import { getMatchesByLeague } from '../db/repositories/matches.js';
+import { getMatchesByLeague, bulkInsertFullMatches } from '../db/repositories/matches.js'; // <--- NUEVO IMPORT
+import { generateLeagueFixture, generateEliminationBracket } from '../utils/fixtureGenerator.js'; // <--- NUEVO IMPORT
 import { renderLeagueStatsChart } from '../components/statsChart.js';
 import { startQRScanner, stopQRScanner, buildQRPayload } from '../utils/qr.js';
 import { handleImportData, exportLeagueToJson } from '../utils/export-import.js';
 import { AlertService } from '../components/alert.js'; 
+
 const SPORT_DISPLAY_NAMES = {
   futbol_sala: 'Futbolito / Futsal',
   futbol_campo: 'Fútbol Campo',
@@ -212,6 +214,7 @@ async function renderLeaguesCards(leagues, activeLeague) {
     const safeMode = escapeHTML(league.mode);
     const safeDescription = escapeHTML(league.description);
     const safeId = escapeHTML(league.id);
+    
     return `
       <article class="league-card ${isActive ? 'league-card--active' : ''}" style="position: relative;">
         <span class="league-card__role ${league.role === 'guest' ? 'league-card__role--guest' : 'league-card__role--owner'}">
@@ -240,8 +243,11 @@ async function renderLeaguesCards(leagues, activeLeague) {
           </div>
           <div class="league-card__actions">
             ${league.role === 'guest' ? '' : `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">Editar</button>`}
-            <!-- 2. AÑADIMOS EL BOTÓN DE EXPORTAR -->
             <button class="btn btn--secondary btn--sm btn-export-league" data-id="${safeId}">Exportar</button>
+            
+            <!-- ⚡ NUEVO BOTÓN PARA GENERAR FIXTURE -->
+            ${league.role === 'guest' ? '' : `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">⚡ Fixture</button>`}
+
             <button class="btn btn--sm btn-danger btn-delete-league" data-id="${safeId}">Borrar</button>
           </div>
         </footer>
@@ -337,13 +343,20 @@ function setupCardEvents(leagues) {
       return;
     }
 
-    // 3. AÑADIMOS EL EVENTO PARA EXPORTAR
-       if (target.classList.contains('btn-export-league')) {
+    if (target.classList.contains('btn-export-league')) {
       const league = leagues.find(l => l.id === leagueId);
       if (league) {
         openShareLeagueModal(league);
       }
       return;
+    }
+
+    // EVENTO DEL NUEVO BOTÓN
+    if (target.classList.contains('btn-gen-fixture')) {
+      const league = leagues.find(l => l.id === leagueId);
+      const mode = target.dataset.mode;
+      const currentTeamsCount = parseInt(target.dataset.teams);
+      handleGenerateFixture(league, mode);      return;
     }
 
     if (target.classList.contains('btn-edit-league')) {
@@ -431,6 +444,7 @@ function showConfirmDialog(messageHTML, onConfirmCallback) {
     if (onConfirmCallback) await onConfirmCallback();
   };
 }
+
 async function openShareLeagueModal(leagueData) {
   document.getElementById('dynamic-share-modal')?.remove();
 
@@ -444,20 +458,16 @@ async function openShareLeagueModal(leagueData) {
 
         <div style="display: flex; flex-direction: column; gap: 1rem;">
           
-          <!-- Botón Compartir WhatsApp / Descargar -->
           <button id="btn-share-whatsapp" class="btn btn--primary" style="width: 100%;">
             📤 Compartir Archivo JSON
           </button>
 
-          <!-- Separador -->
           <div style="text-align: center; color: #64748b; font-size: 0.8rem; margin: 0.5rem 0;">- O -</div>
 
-          <!-- Botón Mostrar QR -->
           <button id="btn-show-qr" class="btn btn--secondary" style="width: 100%;">
             📱 Generar Código QR de Invitación
           </button>
 
-          <!-- Contenedor del QR (Oculto por defecto) -->
           <div id="qr-display-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
             <img id="qr-image" src="" alt="Código QR de Liga" style="width: 220px; height: 220px;" />
             <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para unirte a "${escapeHTML(leagueData.name)}"</p>
@@ -477,19 +487,14 @@ async function openShareLeagueModal(leagueData) {
 
   document.getElementById('dyn-share-cancel').onclick = () => modalEl.remove();
 
-  // 1. Lógica Compartir por WhatsApp / Descargar
-    // 1. Lógica Compartir por WhatsApp / Descargar
   document.getElementById('btn-share-whatsapp').onclick = async () => {
     try {
-      // Obtenemos el JSON usando tu función existente
       const jsonString = await prepareLeagueJsonString(leagueData);
       const blob = new Blob([jsonString], { type: 'application/json' });
       const fileName = `CaimanaDa_${leagueData.name.replace(/\s/g, '_')}.json`;
       
-      // Verificamos si es un dispositivo móvil real (con pantalla táctil)
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-      // Si es móvil y soporta compartir archivos, usamos Web Share API
       if (isMobile && navigator.canShare && navigator.canShare({ files: [new File([blob], fileName)] })) {
         const file = new File([blob], fileName, { type: 'application/json' });
         await navigator.share({
@@ -499,41 +504,37 @@ async function openShareLeagueModal(leagueData) {
         });
         AlertService.showSuccess('Liga compartida.', 'ACCIÓN COMPLETADA');
       } else {
-        // Si es PC (o no soporta compartir), forzamos la descarga directa
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
-        a.style.display = 'none'; // Lo ocultamos por si acaso
+        a.style.display = 'none'; 
         document.body.appendChild(a);
         a.click();
         
-        // Limpiamos la memoria y el DOM
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         }, 100);
 
-        AlertService.showSuccess('Archivo descargado. Ábrelo en WhatsApp Web para enviarlo.', 'DESCARGA LISTA');
+        AlertService.showSuccess('Archivo descargado.', 'DESCARGA LISTA');
       }
     } catch (err) {
       console.error('Error al compartir:', err);
       AlertService.showError('No se pudo compartir el archivo.', 'ERROR');
     }
   };
-  // 2. Lógica Mostrar QR
+  
   document.getElementById('btn-show-qr').onclick = async () => {
     const qrContainer = document.getElementById('qr-display-container');
     const qrImage = document.getElementById('qr-image');
     
-    // Construimos el payload ligero para el QR
     const qrPayload = buildQRPayload('LINK_LEAGUE', {
       leagueName: leagueData.name,
       sport: leagueData.sport,
       mode: leagueData.mode
     });
 
-    // Usamos una API pública para generar la imagen del QR
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
     
     qrImage.src = qrApiUrl;
@@ -541,7 +542,6 @@ async function openShareLeagueModal(leagueData) {
   };
 }
 
-// Función helper para obtener el string del JSON (para no romper tu export-import.js)
 async function prepareLeagueJsonString(leagueData) {
   const teams = await getTeamsByLeague(leagueData.id);
   const teamsWithPlayers = await Promise.all(teams.map(async (team) => {
@@ -563,4 +563,123 @@ async function prepareLeagueJsonString(leagueData) {
     teams: teamsWithPlayers,
     matches: matchesWithEvents
   }, null, 2);
+}
+
+
+// LÓGICA PARA GENERAR EL FIXTURE
+async function handleGenerateFixture(league, mode) {
+  const isLiga = mode.includes('Liga');
+  const isIdaYVuelta = mode.includes('Ida y vuelta');
+  
+  let requiredTeams = 2;
+  if (!isLiga) {
+    if (mode.includes('4')) requiredTeams = 4;
+    else if (mode.includes('8')) requiredTeams = 8;
+    else if (mode.includes('16')) requiredTeams = 16;
+  }
+
+  // OBTENER LOS EQUIPOS DIRECTAMENTE DE LA BD EN ESTE EXACTO SEGUNDO
+  const teams = await getTeamsByLeague(league.id);
+  const realTeamCount = teams.length;
+
+  // VALIDACIONES ESTRICTAS
+  if (isLiga && realTeamCount < 2) {
+    AlertService.showError('Se necesitan al menos 2 equipos para generar una Liga.');
+    return;
+  }
+  
+  if (!isLiga && realTeamCount !== requiredTeams) {
+    AlertService.showError(`Eliminación directa de ${requiredTeams} requiere EXACTAMENTE ${requiredTeams} equipos. Tienes ${realTeamCount}.`);
+    return;
+  }
+
+  // GENERAR PARTIDOS EN MEMORIA
+  let generatedMatches = [];
+  if (isLiga) {
+    generatedMatches = generateLeagueFixture(league.id, teams, isIdaYVuelta);
+  } else {
+    generatedMatches = generateEliminationBracket(league.id, teams, requiredTeams);
+  }
+
+  // ABRIR MODAL PARA ORGANIZAR FECHAS
+  openFixtureConfigModal(generatedMatches, teams);
+}
+
+// ==========================================
+// MODAL PARA EDITAR FECHAS ANTES DE GUARDAR
+// ==========================================
+function openFixtureConfigModal(matches, teamsList) {
+  document.getElementById('dynamic-fixture-modal')?.remove();
+  
+  const teamsObj = Object.fromEntries(teamsList.map(t => [t.id, t.name]));
+  
+  // Crear el HTML de la lista de partidos con sus inputs de fecha
+  let matchesHTML = '';
+  matches.forEach((m, index) => {
+    const homeName = m.homeTeamId === 'TBD' ? 'Por definir' : (teamsObj[m.homeTeamId] || 'Eliminado');
+    const awayName = m.awayTeamId === 'TBD' ? 'Por definir' : (teamsObj[m.awayTeamId] || 'Eliminado');
+    
+    // Formatear fecha para el input
+    const d = new Date(m.date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); // Ajuste de zona horaria
+    const dateVal = d.toISOString().slice(0, 16);
+
+    matchesHTML += `
+      <div class="info-card" style="padding: 0.75rem; display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem;">
+        <span style="flex:1; text-align:right; font-weight:bold; font-size:0.85rem;">${homeName}</span>
+        <span style="color:#64748b; font-weight:bold;">VS</span>
+        <span style="flex:1; text-align:left; font-weight:bold; font-size:0.85rem;">${awayName}</span>
+        <input type="datetime-local" class="form-control fixture-date-input" data-index="${index}" value="${dateVal}" style="width: 180px; padding: 0.3rem; font-size: 0.8rem;" />
+      </div>
+    `;
+  });
+
+  // Inyectar el modal en el DOM
+  const modalHTML = `
+    <div id="dynamic-fixture-modal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <h2 class="modal-card__title">Organizar Calendario</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">Ajusta las fechas y horas de los encuentros. Al guardar, se crearán en el sistema.</p>
+        
+        <div id="fixture-list-container">
+          ${matchesHTML}
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1.5rem; justify-content: flex-end;">
+          <button type="button" id="btn-cancel-fixture" class="btn btn--secondary">Cancelar</button>
+          <button type="button" id="btn-save-fixture" class="btn btn--primary">💾 Guardar Todo el Fixture</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const modalEl = document.getElementById('dynamic-fixture-modal');
+
+  // Evento para cerrar
+  document.getElementById('btn-cancel-fixture').onclick = () => modalEl.remove();
+  modalEl.onclick = (e) => { if (e.target === modalEl) modalEl.remove(); };
+
+  // Evento para GUARDAR definitivamente en la Base de Datos
+  document.getElementById('btn-save-fixture').onclick = async () => {
+    // 1. Recoger las fechas que editó el usuario
+    const dateInputs = document.querySelectorAll('.fixture-date-input');
+    dateInputs.forEach(input => {
+      const idx = parseInt(input.dataset.index);
+      if (input.value) {
+        matches[idx].date = new Date(input.value).toISOString();
+      }
+    });
+
+    // 2. Guardar en IndexedDB
+    try {
+      await bulkInsertFullMatches(matches);
+      AlertService.showChampion(`¡Se guardaron ${matches.length} partidos exitosamente!`, 'FIXTER LISTO');
+      modalEl.remove();
+      renderLeaguesView(); // Recargamos para que el contador de partidos en la tarjeta se actualice
+    } catch (error) {
+      console.error('Error guardando fixture:', error);
+      AlertService.showError('Ocurrió un error al guardar los partidos en la base de datos.');
+    }
+  };
 }

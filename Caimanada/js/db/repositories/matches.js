@@ -72,3 +72,43 @@ export async function deleteMatchesByLeague(leagueId) {
   });
   return true;
 }
+
+export async function bulkInsertFullMatches(matchesList) {
+  await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    matchesList.forEach(match => {
+      store.add({
+        id: match.id,
+        leagueId: match.leagueId,
+        round: match.round || 1,
+        homeTeamId: match.homeTeamId,
+        awayTeamId: match.awayTeamId,
+        scoreHome: null,
+        scoreAway: null,
+        status: 'pending',
+        date: match.date || null,
+        winnerGoesToMatchId: match.winnerGoesToMatchId || null,
+        slot: match.slot || null
+      });
+    });
+    return null;
+  });
+  return true;
+}
+
+export async function updateMatch(matchData) {
+  if (!matchData || !matchData.id) return null;
+  await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    return store.put(matchData);
+  });
+  return matchData;
+}
+
+export async function deleteMatch(matchId) {
+  await executeTransaction(STORE_NAME, 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAME);
+    return store.delete(matchId);
+  });
+  return true;
+}
