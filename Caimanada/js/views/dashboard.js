@@ -217,7 +217,6 @@ export async function renderDashboardView() {
     }
   }
 
-  // --- GRÁFICA DE CHART.JS RESTAURADA ---
   const ctx = document.getElementById('canvas-dashboard-stats');
   if (ctx && standings.length > 0) {
     dashboardChart = new Chart(ctx, {
