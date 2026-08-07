@@ -1081,8 +1081,6 @@
 }
 .match-card__score--active:hover { background: rgba(0, 255, 157, 0.1) !important; transform: scale(1.05) !important; }
 
-<<<<<<< HEAD
-
 /* ====================================================================
    5. MODALES Y FORMULARIOS
    ==================================================================== */
@@ -1091,11 +1089,11 @@
   backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center;
   z-index: 9999; padding: 1rem 1rem 5rem 1rem; overflow-y: auto;
-=======
+}
+
 .match-card__score--finished { 
   color: #fff !important; border-color: var(--accent-primary) !important; 
   background: rgba(0, 255, 157, 0.1) !important; cursor: pointer !important;
->>>>>>> 52425d4791e6701974f45c8c33e0be56f33f7370
 }
 
 /* Botones pequeños en tarjetas */
@@ -1412,7 +1410,6 @@
   box-sizing: border-box;
 }
 
-<<<<<<< HEAD
 .auth-card__input:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px var(--accent-glow-soft); }
 
 /* ============================================================
@@ -1586,7 +1583,7 @@
     letter-spacing: 0.01rem !important;
     min-width: 42% !important;
   }
-=======
+}
 .auth-card__input::placeholder {
   color: var(--text-muted);
   font-weight: 400;
@@ -2014,5 +2011,4 @@
   color: var(--text-primary);
   background: rgba(0, 0, 0, 0.5);
   border-color: rgba(255, 255, 255, 0.1);
->>>>>>> 52425d4791e6701974f45c8c33e0be56f33f7370
 }
