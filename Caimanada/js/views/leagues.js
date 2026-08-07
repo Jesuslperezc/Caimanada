@@ -216,7 +216,10 @@ async function renderLeaguesCards(leagues, activeLeague) {
       primaryActionBtn = `<button class="btn btn--primary btn--sm btn-guest-update" data-id="${safeId}">🔄 Actualizar</button>`;
       secondaryActionBtn = '<div></div>';
     } else {
-      if (allMatchesPlayed) {
+      if (league.isFinished) {
+        primaryActionBtn = '<span style="color: #f59e0b; font-weight: bold; text-align: center; padding: 0.4rem;">🏁 FINALIZADA</span>';
+        secondaryActionBtn = '<div></div>';
+      } else if (allMatchesPlayed) {
         primaryActionBtn = `<button class="btn btn--primary btn--sm btn-final-results" data-id="${safeId}">🏆 Finalizar</button>`;
         secondaryActionBtn = '<div></div>';
       } else {
@@ -692,46 +695,56 @@ async function openShareLeagueModal(leagueData, exportType) {
 }
 
 async function openFinalResultsModal(leagueData) {
-  document.getElementById('dynamic-final-modal')?.remove();
+  document.getElementById('dynamic-share-modal')?.remove();
   const modalHTML = `
-    <div id="dynamic-final-modal" class="modal-overlay">
+    <div id="dynamic-share-modal" class="modal-overlay">
       <div class="modal-card" style="max-width: 420px;">
-        <h2 class="modal-card__title">Resultados Finales</h2>
-        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">Sube la foto de los campeones. Los invitados podrán descargarla escaneando el QR.</p>
-        <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="form-group__label">Foto de la CaimanaDa</label>
-          <input type="file" id="final-photo-input" accept="image/*" class="form-control" />
-        </div>
-        <div id="qr-final-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
-          <img id="qr-final-image" src="" alt="Código QR Final" style="width: 220px; height: 220px;" />
+        <h2 class="modal-card__title">Última Sincronización</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">Genera este QR para que los invitados actualicen los resultados y estadísticas finales de la liga.</p>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <button id="btn-show-qr" class="btn btn--primary" style="width: 100%;">📱 Generar Código QR Final</button>
+          <div id="qr-display-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
+            <img id="qr-image" src="" alt="Código QR" style="width: 100%; height: auto; max-width: 350px;" />
+            <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para sincronizar</p>
+          </div>
         </div>
         <div class="modal-actions" style="margin-top: 2rem; text-align: right;">
-          <button type="button" id="dyn-final-cancel" class="btn btn--secondary">Cerrar</button>
+          <button type="button" id="dyn-share-cancel" class="btn btn--secondary">Cerrar</button>
         </div>
       </div>
     </div>`;
   document.body.insertAdjacentHTML('beforeend', modalHTML);
-  const modalEl = document.getElementById('dynamic-final-modal');
-  document.getElementById('dyn-final-cancel').onclick = () => modalEl.remove();
+  const modalEl = document.getElementById('dynamic-share-modal');
+  
+  // Al cerrar, recargamos la vista para que la tarjeta muestre "FINALIZADA"
+  document.getElementById('dyn-share-cancel').onclick = async () => {
+    modalEl.remove();
+    await renderLeaguesView(); 
+  };
 
-  document.getElementById('final-photo-input').onchange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        const photoBase64 = ev.target.result;
-        await updateLeague({ ...leagueData, finalPhoto: photoBase64, isFinished: true });
-        
-        const qrPayload = buildQRPayload('FINAL_RESULTS', {
-          leagueId: leagueData.id,
-          photo: photoBase64
-        });
-        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
-        document.getElementById('qr-final-image').src = qrApiUrl;
-        document.getElementById('qr-final-container').style.display = 'flex';
-        AlertService.showSuccess('Resultados finales guardados. Muestra el QR a los invitados.');
-      };
-      reader.readAsDataURL(file);
+  document.getElementById('btn-show-qr').onclick = async () => {
+    const matches = await getMatchesByLeague(leagueData.id);
+    let payload = {
+      leagueId: leagueData.id,
+      leagueName: leagueData.name,
+      sport: leagueData.sport,
+      mode: leagueData.mode
+    };
+
+    // MANDAMOS TODOS LOS PARTIDOS CON SUS EVENTOS PARA EL ÚLTIMO SYNC
+    payload.matches = await Promise.all(matches.map(async (m) => {
+      const events = m.status === 'completed' ? await MatchEventRepository.getEventsByMatch(m.id) : [];
+      return { id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway, events: events || [] };
+    }));
+
+    const qrPayload = buildQRPayload('LEAGUE_UPDATE', payload); // Usamos LEAGUE_UPDATE
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qrPayload)}`;
+    document.getElementById('qr-image').src = qrApiUrl;
+    document.getElementById('qr-display-container').style.display = 'flex';
+    
+    // Marcamos la liga como finalizada en la base de datos local
+    if (!leagueData.isFinished) {
+      await updateLeague({ ...leagueData, isFinished: true });
     }
   };
 }
