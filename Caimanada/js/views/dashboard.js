@@ -52,7 +52,7 @@ export async function renderDashboardView() {
   document.getElementById('next-match-label').textContent = 'Próximo Enfrentamiento';
 
   if (leagueMode.includes('Eliminación')) {
-    if (bracketCard) bracketCard.style.display = 'block';
+    if (bracketCard) bracketCard.style.display = 'flex'; // Ajustado a flex para que coincida con info-card
   } else {
     if (bracketCard) bracketCard.style.display = 'none';
   }
@@ -195,17 +195,18 @@ export async function renderDashboardView() {
           winnerName = finalMatch.scoreHome > finalMatch.scoreAway ? homeName : awayName;
         }
 
+        // HTML limpio sin estilos inline
         bracketContainer.innerHTML = `
           <div class="bracket-match">
-            <p style="font-size: 0.75rem; color: #94a3b8; margin:0 0 0.5rem 0;">FINAL</p>
-            <p style="font-weight: bold; margin: 0.25rem 0; color: #e2e8f0;">${homeName}</p>
-            <p style="font-size: 0.7rem; color: #64748b; margin:0;">VS</p>
-            <p style="font-weight: bold; margin: 0.25rem 0; color: #e2e8f0;">${awayName}</p>
+            <p class="bracket-round-label">FINAL</p>
+            <p class="bracket-team-name">${homeName}</p>
+            <p class="bracket-vs">VS</p>
+            <p class="bracket-team-name">${awayName}</p>
           </div>
           <div class="bracket-arrow">➜</div>
           <div class="bracket-winner">
-            <p style="font-size: 0.75rem; color: var(--accent-primary, #00A86B); margin:0 0 0.5rem 0;">👑 CAMPEÓN</p>
-            <p style="font-weight: 800; margin: 0.25rem 0; font-size: 1.1rem;">${winnerName}</p>
+            <p class="bracket-champ-label">👑 CAMPEÓN</p>
+            <p class="bracket-champ-name">${winnerName}</p>
           </div>
         `;
       }
@@ -217,12 +218,11 @@ export async function renderDashboardView() {
   const chartWrapper = ctx ? ctx.parentElement : null;
   
   if (ctx && chartWrapper) {
-    // Limpiamos el mensaje de "No hay datos" si existe
     const existingMsg = document.getElementById('no-data-dashboard-msg');
     if (existingMsg) existingMsg.remove();
 
     if (standings.length > 0 && standings.some(s => s.pts > 0 || s.pj > 0)) {
-      ctx.style.display = 'block'; // Mostramos el canvas
+      ctx.style.display = 'block';
       dashboardChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -230,8 +230,8 @@ export async function renderDashboardView() {
           datasets: [{
             label: 'Puntos Totales',
             data: standings.map(s => s.pts),
-            backgroundColor: 'rgba(0, 168, 107, 0.6)',
-            borderColor: 'rgba(0, 168, 107, 1)',
+            backgroundColor: 'rgba(0, 255, 157, 0.6)', // Actualizado al neón
+            borderColor: 'rgba(0, 255, 157, 1)',
             borderWidth: 1,
             borderRadius: 6
           }]
@@ -247,11 +247,12 @@ export async function renderDashboardView() {
         }
       });
     } else {
-      // Ocultamos el canvas y mostramos mensaje
       ctx.style.display = 'none';
       const msg = document.createElement('p');
       msg.id = 'no-data-dashboard-msg';
-      msg.style.cssText = 'text-align: center; padding: 3rem 1rem; color: #64748b; font-size: 0.9rem;';
+      msg.className = 'info-card__subtext'; // Reutilizamos clase en lugar de style inline
+      msg.style.textAlign = 'center';
+      msg.style.padding = '3rem 1rem';
       msg.textContent = 'No hay datos registrados';
       chartWrapper.appendChild(msg);
     }

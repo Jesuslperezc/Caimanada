@@ -49,14 +49,14 @@ export function renderUserAvatar() {
       userAvatar.id = 'user-avatar-nav';
       userAvatar.className = 'app-header__user-avatar';
       userAvatar.title = `Sesión: ${user.name} (Click para editar)`;
-      userAvatar.style.cursor = 'pointer';
       
       if (user.img) {
         userAvatar.src = user.img;
         userAvatar.alt = user.name;
       } else {
         const initial = user.name.charAt(0).toUpperCase();
-        const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23334155'/><text x='50%' y='55%' font-family='system-ui' font-size='18' font-weight='bold' fill='%2300A86B' text-anchor='middle' dominant-baseline='middle'>${initial}</text></svg>`;
+        // Actualizado al nuevo verde neón (#00ff9d) y fondo oscuro
+        const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23102420'/><text x='50%' y='55%' font-family='system-ui' font-size='18' font-weight='bold' fill='%2300ff9d' text-anchor='middle' dominant-baseline='middle'>${initial}</text></svg>`;
         userAvatar.src = `data:image/svg+xml;utf8,${svg}`;
       }
       
@@ -69,29 +69,33 @@ function openProfileModal() {
   document.getElementById('dynamic-profile-modal')?.remove();
   const user = getCurrentUser();
 
+  // HTML limpio usando las clases de nuestro sistema de diseño, sin estilos inline
   const modalHTML = `
     <div id="dynamic-profile-modal" class="modal-overlay">
-      <div class="modal-card" style="max-width: 400px;">
-        <h2 class="modal-card__title" style="text-align: center;">Mi Perfil</h2>
+      <div class="modal-card" style="max-width: 420px;">
+        <h2 class="modal-card__title">Mi Perfil</h2>
         
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem;">
-          <label for="profile-img-input" class="auth-avatar-wrapper" id="profile-avatar-label" style="width: 90px; height: 90px; margin-bottom: 0.5rem;">
+          <label for="profile-img-input" class="auth-avatar-wrapper" id="profile-avatar-label" style="width: 100px; height: 100px; margin-bottom: 0;">
             ${user.img ? `<img src="${user.img}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : `<span class="auth-avatar__placeholder">Cambiar</span>`}
             <div class="auth-avatar__edit">✎</div>
           </label>
-          <input type="file" id="profile-img-input" accept="image/*" style="display: none;">
+          <input type="file" id="profile-img-input" accept="image/*" class="is-hidden">
         </div>
 
         <form id="profile-form">
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-group">
             <label class="form-group__label">Nombre / Apodo</label>
-            <input type="text" id="profile-name" class="form-control" value="${user.name}" required style="width: 100%; padding: 0.5rem;">
+            <input type="text" id="profile-name" class="form-control" value="${user.name}" required>
           </div>
 
-          <div class="modal-actions" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem;">
-            <button type="submit" class="btn btn--primary" style="width: 100%;">Guardar Cambios</button>
+          <div class="form-grid-2" style="margin-top: 1.5rem; gap: 0.75rem;">
+            <button type="submit" class="btn btn--primary">Guardar</button>
+            <button type="button" id="dyn-profile-cancel" class="btn btn--primary" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--border-card); box-shadow: none;">Cancelar</button>
+          </div>
+          
+          <div style="margin-top: 1rem;">
             <button type="button" id="btn-logout" class="btn btn-danger" style="width: 100%;">Cerrar Sesión y Borrar Datos</button>
-            <button type="button" id="dyn-profile-cancel" class="btn btn--secondary" style="width: 100%;">Cancelar</button>
           </div>
         </form>
       </div>
@@ -134,7 +138,7 @@ function openProfileModal() {
           navAvatar.src = newImageBase64;
         } else {
           const initial = newName.charAt(0).toUpperCase();
-          const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23334155'/><text x='50%' y='55%' font-family='system-ui' font-size='18' font-weight='bold' fill='%2300A86B' text-anchor='middle' dominant-baseline='middle'>${initial}</text></svg>`;
+          const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23102420'/><text x='50%' y='55%' font-family='system-ui' font-size='18' font-weight='bold' fill='%2300ff9d' text-anchor='middle' dominant-baseline='middle'>${initial}</text></svg>`;
           navAvatar.src = `data:image/svg+xml;utf8,${svg}`;
         }
         navAvatar.title = `Sesión: ${newName} (Click para editar)`;
