@@ -77,44 +77,44 @@ export async function renderTeamsView() {
         return;
       }
 
-      container.innerHTML = `
-        <div class="teams-grid">
-          ${teams.map(team => {
-            const safeName = escapeHTML(team.name);
-            const safeDelegate = escapeHTML(team.delegate || 'Sin asignar');
-            const safeColor = team.color ? escapeHTML(team.color) : 'var(--accent-primary, #00A86B)';
-            const playersCount = playersCountMap[team.id] || 0;
-            const safeId = escapeHTML(team.id);
-            const st = statsMap[team.id] || { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 };
+    container.innerHTML = `
+      <div class="teams-grid">
+        ${teams.map(team => {
+          const safeName = escapeHTML(team.name);
+          const safeDelegate = escapeHTML(team.delegate || 'Sin asignar');
+          const safeColor = team.color ? escapeHTML(team.color) : '#00ff9d';
+          const playersCount = playersCountMap[team.id] || 0;
+          const safeId = escapeHTML(team.id);
+          const st = statsMap[team.id] || { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 };
+          const dgClass = st.dg > 0 ? 'team-stats-dg--positive' : (st.dg < 0 ? 'team-stats-dg--negative' : '');
 
-            return `
-              <article class="info-card team-card" style="border-left: 4px solid ${safeColor}">
-                <header class="info-card__header">
-                  <span class="info-card__label">${team.leagueId ? 'En competición' : 'Club Independiente'}</span>
-                  <h2 class="info-card__highlight">${safeName}</h2>
-                </header>
-                <div class="info-card__body">
-                  <p class="info-card__subtext"><strong>Delegado:</strong> ${safeDelegate}</p>
-                  <p class="info-card__subtext"><strong>Jugadores:</strong> ${playersCount}</p>
-                  <hr class="card-divider" />
-                  <div class="team-stats-summary" style="display: flex; justify-content: space-between; text-align: center; font-size: 0.85rem; margin-top: 0.5rem;">
-                    <div><strong>PTS</strong><br/>${st.pts}</div>
-                    <div><strong>PJ</strong><br/>${st.pj}</div>
-                    <div><strong>G/E/P</strong><br/>${st.pg}/${st.pe}/${st.pp}</div>
-                    <div><strong>DG</strong><br/>${st.dg > 0 ? `+${st.dg}` : st.dg}</div>
-                  </div>
+          return `
+            <article class="info-card team-card" style="--team-accent: ${safeColor};">
+              <header class="info-card__header">
+                <span class="info-card__label">${team.leagueId ? 'En competición' : 'Club Independiente'}</span>
+                <h2 class="info-card__highlight">${safeName}</h2>
+              </header>
+              <div class="info-card__body">
+                <p class="info-card__subtext"><strong>Delegado:</strong> ${safeDelegate}</p>
+                <p class="info-card__subtext"><strong>Jugadores:</strong> ${playersCount}</p>
+                <hr class="card-divider" />
+                <div class="team-stats-summary">
+                  <div><strong>PTS</strong><br/><span>${st.pts}</span></div>
+                  <div><strong>PJ</strong><br/><span>${st.pj}</span></div>
+                  <div><strong>G/E/P</strong><br/><span>${st.pg}/${st.pe}/${st.pp}</span></div>
+                  <div><strong>DG</strong><br/><span class="${dgClass}">${st.dg > 0 ? `+${st.dg}` : st.dg}</span></div>
                 </div>
-                <footer class="info-card__footer" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 1rem;">
-                  <button class="btn btn--secondary btn--sm btn-view-roster" data-id="${safeId}" data-name="${safeName}">Plantilla</button>
-                  <button class="btn btn--primary btn--sm btn-add-player" data-id="${safeId}" data-name="${safeName}">+ Jugador</button>
-                  <button class="btn btn--secondary btn--sm btn-share-team" data-id="${safeId}" data-name="${safeName}">Compartir QR</button>
-                  <button class="btn btn--danger btn--sm btn-delete-team" data-id="${safeId}" data-name="${safeName}">Eliminar</button>
-                </footer>
-              </article>`;
-          }).join('')}
-        </div>`;
-    }
-
+              </div>
+              <footer class="info-card__footer">
+                <button class="btn btn--secondary btn--sm btn-view-roster" data-id="${safeId}" data-name="${safeName}">Plantilla</button>
+                <button class="btn btn--primary btn--sm btn-add-player" data-id="${safeId}" data-name="${safeName}">+ Jugador</button>
+                <button class="btn btn--secondary btn--sm btn-share-team" data-id="${safeId}" data-name="${safeName}">Compartir QR</button>
+                <button class="btn btn--danger btn--sm btn-delete-team" data-id="${safeId}" data-name="${safeName}">Eliminar</button>
+              </footer>
+            </article>`;
+        }).join('')}
+      </div>`;
+      }
     if (searchInput) {
       searchInput.oninput = (e) => {
         const query = e.target.value.toLowerCase().trim();
@@ -240,7 +240,7 @@ async function openAddPlayerModal(teamId, teamName, sportId, currentCount, maxCo
       <div class="modal-card">
         <h2 class="modal-card__title">Agregar Jugador</h2>
         <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">Equipo: <strong>${escapeHTML(teamName)}</strong></p>
-        <p id="available-spots-text" style="font-size: 0.8rem; color: #10b981; margin-bottom: 1.5rem; font-weight: bold;">📋 Cupos disponibles: ${availableSpots} de ${maxCount}</p>
+        <p id="available-spots-text" style="font-size: 0.8rem; color: #10b981; margin-bottom: 1.5rem; font-weight: bold;">Cupos disponibles: ${availableSpots} de ${maxCount}</p>
         <form id="dyn-player-form">
           <div class="form-group" style="margin-bottom: 1rem;">
             <label class="form-group__label">Nombre Completo *</label>
@@ -290,7 +290,7 @@ async function openAddPlayerModal(teamId, teamName, sportId, currentCount, maxCo
       nameInput.value = '';
       numberInput.value = Number(number) + 1;
       nameInput.focus();
-      spotsText.textContent = `📋 Cupos disponibles: ${availableSpots} de ${maxCount}`;
+      spotsText.textContent = `Cupos disponibles: ${availableSpots} de ${maxCount}`;
     }
   };
 }
@@ -320,15 +320,15 @@ function openRosterModal(teamId, teamName, onCloseCallback) {
       return;
     }
     list.innerHTML = players.map(p => `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem; background: rgba(255,255,255,0.05); margin-bottom: 0.4rem; border-radius: 6px;">
+      <div class="roster-player-row">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-          <span style="background: #10b981; color: #fff; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">#${escapeHTML(p.number)}</span>
+          <span class="roster-player-number">#${escapeHTML(p.number)}</span>
           <div>
-            <span style="font-weight: 500; color: #e2e8f0;">${escapeHTML(p.name)}</span><br>
-            <span style="font-size: 0.75rem; color: #10b981;">${escapeHTML(p.position || 'Sin posición')}</span>
+            <span class="roster-player-name">${escapeHTML(p.name)}</span><br>
+            <span class="roster-player-position">${escapeHTML(p.position || 'Sin posición')}</span>
           </div>
         </div>
-        <button class="btn btn--danger btn--sm btn-del-p" data-id="${p.id}">X</button>
+        <button class="roster-delete-btn btn-del-p" data-id="${p.id}">X</button>
       </div>`).join('');
     list.querySelectorAll('.btn-del-p').forEach(btn => {
       btn.onclick = async () => { await deletePlayer(btn.dataset.id); AlertService.showWarning('Jugador eliminado.', 'JUGADOR BORRADO'); await loadPlayers(); };
@@ -388,7 +388,7 @@ export async function setupScanTeamButton() {
     scanBtn = document.createElement('button');
     scanBtn.id = 'btn-scan-team';
     scanBtn.className = 'btn btn--secondary';
-    scanBtn.innerHTML = '📷 Escanear Equipo';
+    scanBtn.innerHTML = 'Escanear Equipo';
     scanBtn.style.marginLeft = '0.5rem';
     addBtn.parentNode.insertBefore(scanBtn, addBtn.nextSibling);
   }
