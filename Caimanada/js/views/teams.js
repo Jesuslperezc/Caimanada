@@ -146,24 +146,6 @@ export async function renderTeamsView() {
       if (btn.classList.contains('btn-view-roster')) {
         openRosterModal(safeId, safeName, async () => { await renderTeamsView(); });
       }
-
-<<<<<<< HEAD
-      if (btn.classList.contains('btn-join-league')) {
-        const teamData = teamsData.find(t => t.id === safeId);
-        const teamSport = teamData ? teamData.sportId : activeSportId;
-        openLinkLeagueModal(safeId, safeName, teamSport, async () => { await renderTeamsView(); });
-      }
-
-      if (btn.classList.contains('btn-leave-league')) {
-        showConfirmDialog(`¿Desvincular al equipo <strong>"${escapeHTML(safeName)}"</strong> de la liga actual?`, async () => {
-          await updateTeam({ id: safeId, leagueId: null });
-          AlertService.showSuccess('Equipo desvinculado.', 'ACCIÓN COMPLETADA');
-          await renderTeamsView();
-        });
-      }
-
-=======
->>>>>>> f78636deba741caca5324a317dcd0c1b1fdbcf77
       if (btn.classList.contains('btn-delete-team')) {
         showConfirmDialog(`¿Deseas eliminar el equipo <strong>"${escapeHTML(safeName)}"</strong>?`, async () => {
           await deleteTeam(safeId);
