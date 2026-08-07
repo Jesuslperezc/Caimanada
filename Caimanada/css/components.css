@@ -253,7 +253,7 @@
     left: 0;
     right: auto;
     max-width: 130px; /* Súper reducido en móvil */
-    min-width: 90px;
+    min-width: 55px;
   }
 }
 /* ====================================================================
