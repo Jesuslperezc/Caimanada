@@ -109,7 +109,7 @@ function showLogoutConfirmModal() {
       <div id="dynamic-logout-modal" class="modal-overlay">
         <div class="modal-card" style="max-width: 420px; text-align: center;">
           <h2 class="modal-card__title">Cerrar Sesión</h2>
-          <p style="color: #94a3b8; margin-bottom: 1.5rem; line-height: 1.6; font-size: 0.95rem;">
+          <p style="color: #5ea9e79c; margin-bottom: 1.5rem; line-height: 1.6; font-size: 0.95rem;">
             ¿Estás seguro de que deseas cerrar sesión? <br><br>
             <strong style="color: #ef4444;">Se borrarán todos los datos locales</strong> (ligas, equipos, partidos) de este dispositivo. Esta acción no se puede deshacer.
           </p>

@@ -637,14 +637,14 @@ window.showMatchSummary = async function(matchId) {
       return evts.map(e => {
         let text = '', icon = '⭐', color = '#10b981';
         if (e.type === 'point') { text = `+${e.pointsValue > 1 ? e.pointsValue + 'pts ' : ''} #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'warning') { icon = '🟨'; color = '#eab308'; text = `Amarilla #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'expulsion') { icon = '🟥'; color = '#ef4444'; text = `Roja #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'substitution') { icon = '🔄'; color = '#3b82f6'; text = `Entra #${e.playerNumber} ${escapeHTML(e.playerName)} por #${e.outPlayerNumber} ${escapeHTML(e.outPlayerName)}`; }
-        else if (e.type === 'out') { icon = '⛔'; color = '#94a3b8'; text = `Out (${escapeHTML(e.playerName)})`; }
-        else if (e.type === 'strike') { icon = '⚡'; color = '#f59e0b'; text = `Strike (${escapeHTML(e.playerName)})`; }
-        else if (e.type === 'foul') { icon = '🟠'; color = '#fb923c'; text = `Foul (${escapeHTML(e.playerName)})`; }
-        else if (e.type === 'volleyball_red') { icon = '🟥'; color = '#ef4444'; text = `Roja Directa #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'volleyball_set_expulsion') { icon = '⛔'; color = '#a855f7'; text = `Expulsión Set #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+        else if (e.type === 'warning') { icon = '🟨'; color = '#eab20852'; text = `Amarilla #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+        else if (e.type === 'expulsion') { icon = '🟥'; color = '#ef44446b'; text = `Roja #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+        else if (e.type === 'substitution') { icon = '🔄'; color = '#3b83f65e'; text = `Entra #${e.playerNumber} ${escapeHTML(e.playerName)} por #${e.outPlayerNumber} ${escapeHTML(e.outPlayerName)}`; }
+        else if (e.type === 'out') { icon = '⛔'; color = '#94a3b88f'; text = `Out (${escapeHTML(e.playerName)})`; }
+        else if (e.type === 'strike') { icon = '⚡'; color = '#f59f0b54'; text = `Strike (${escapeHTML(e.playerName)})`; }
+        else if (e.type === 'foul') { icon = '🟠'; color = '#fb923c91'; text = `Foul (${escapeHTML(e.playerName)})`; }
+        else if (e.type === 'volleyball_red') { icon = '🟥'; color = '#ef444481'; text = `Roja Directa #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+        else if (e.type === 'volleyball_set_expulsion') { icon = '⛔'; color = '#a955f77e'; text = `Expulsión Set #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
         else if (e.type === 'volleyball_disqualification') { icon = '🚫'; color = '#000'; text = `Descalificación #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
         else if (e.type === 'game_milestone') { icon = '🏆'; color = '#fbbf24'; text = `¡Juego!`; }
         return `<div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: ${color}; font-size: 0.9rem;"><span>${icon} ${text}</span><span style="color: #fff; font-weight: bold; min-width: 45px; text-align: right;">${e.minute}</span></div>`;
@@ -660,8 +660,8 @@ window.showMatchSummary = async function(matchId) {
           <div style="flex:1; text-align: left; font-weight: 800; color: #e2e8f0;">${escapeHTML(awayTeam?.name || 'Visitante')}</div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-          <div><h4 style="color: #00A86B; margin-bottom: 0.5rem; text-align: center; border-bottom: 1px solid #334155; padding-bottom: 5px;">Local</h4>${renderEventList(homeEvents)}</div>
-          <div><h4 style="color: #3b82f6; margin-bottom: 0.5rem; text-align: center; border-bottom: 1px solid #334155; padding-bottom: 5px;">Visitante</h4>${renderEventList(awayEvents)}</div>
+          <div><h4 style="color: #0ca86f46; margin-bottom: 0.5rem; text-align: center; border-bottom: 1px solid #334155; padding-bottom: 5px;">Local</h4>${renderEventList(homeEvents)}</div>
+          <div><h4 style="color: #3b83f64d; margin-bottom: 0.5rem; text-align: center; border-bottom: 1px solid #334155; padding-bottom: 5px;">Visitante</h4>${renderEventList(awayEvents)}</div>
         </div>
         <div style="text-align: center; margin-top: 2rem;"><button type="button" class="btn btn--secondary" onclick="document.getElementById('dynamic-summary-modal').remove()">Cerrar</button></div>
       </div>`;
