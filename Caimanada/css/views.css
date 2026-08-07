@@ -512,9 +512,9 @@
   }
 }
 
-/* =================
-   3. VISTA EQUIPOS 
-   ================= */
+/* ====================================================================
+   3. VISTA EQUIPOS (GLASS INNOVADOR)
+   ==================================================================== */
 
 /* --- HEADER DE LA VISTA --- */
 .teams-view-header {
@@ -544,7 +544,7 @@
 
 .teams-view-header__actions {
   display: flex;
-  gap: 0.75rem; /* Aumentado de 0.5rem a 0.75rem para mejor separación */
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
@@ -605,7 +605,7 @@
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-left: none !important; /* Eliminamos el borde inline del JS */
+  border-left: none !important;
 }
 
 /* Línea brillante superior */
@@ -760,11 +760,11 @@
   color: #ff3366 !important;
 }
 
-/* --- FOOTER Y ACCIONES (IGUAL QUE EN LIGAS) --- */
+/* --- FOOTER Y ACCIONES --- */
 .team-card .info-card__footer {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.6rem; /* Aumentado de 0.5rem a 0.6rem como en ligas */
+  gap: 0.6rem;
   margin-top: auto;
   padding-top: 1rem;
   border-top: 0.0625rem solid var(--border-subtle);
@@ -772,7 +772,7 @@
 }
 
 .team-card .info-card__footer .btn {
-  padding: 0.65rem 0.5rem; /* Aumentado de 0.6rem a 0.65rem como en ligas */
+  padding: 0.65rem 0.5rem;
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -800,7 +800,7 @@
   transform: scale(0.97);
 }
 
-/* Botón primario (igual que en ligas) */
+/* Botón primario */
 .team-card .info-card__footer .btn--primary {
   background: rgba(0, 255, 157, 0.08);
   color: var(--accent-primary);
@@ -813,7 +813,7 @@
   box-shadow: 0 0 0.75rem rgba(0, 255, 157, 0.2);
 }
 
-/* Botón danger (igual que en ligas) */
+/* Botón danger */
 .team-card .info-card__footer .btn--danger {
   color: #ff3366;
   border-color: rgba(255, 51, 102, 0.2);
@@ -901,7 +901,9 @@
   min-height: 220px;
 }
 
-/* --- RESPONSIVE MÓVIL --- */
+/* ============================================================
+   RESPONSIVE MÓVIL - BOTONES MÁS PEQUEÑOS Y SEPARADOS
+   ============================================================ */
 @media (max-width: 640px) {
   .teams-view-header {
     flex-direction: column;
@@ -911,13 +913,28 @@
 
   .teams-view-header__actions {
     width: 100%;
+    display: flex;
+    gap: 0.5rem; /* Reducido para mejor separación */
+    flex-wrap: wrap;
   }
 
+  /* Botones principales más pequeños y separados */
   .teams-view-header__actions .btn {
     flex: 1;
     min-width: 0;
-    font-size: 0.7rem;
-    padding: 0.65rem 0.5rem;
+    font-size: 0.65rem; /* Reducido de 0.7rem a 0.65rem */
+    padding: 0.5rem 0.35rem; /* Reducido de 0.65rem 0.5rem */
+    letter-spacing: 0.025rem;
+    border-radius: 0.5rem;
+  }
+
+  /* Separación extra entre los dos botones principales */
+  .teams-view-header__actions .btn:first-child {
+    margin-right: 0.15rem;
+  }
+
+  .teams-view-header__actions .btn:last-child {
+    margin-left: 0.15rem;
   }
 
   .teams-search-wrapper .form-input {
@@ -955,19 +972,29 @@
     font-size: 1.05rem;
   }
 
-  /* Ajuste de botones en móvil (igual que en ligas) */
+  /* Botones de las tarjetas en móvil */
   .team-card .info-card__footer {
     gap: 0.5rem;
   }
 
   .team-card .info-card__footer .btn {
-    padding: 0.6rem 0.35rem;
-    font-size: 0.62rem;
+    padding: 0.55rem 0.3rem;
+    font-size: 0.6rem; /* Reducido de 0.62rem a 0.6rem */
+    letter-spacing: 0.025rem;
   }
 }
 
-/* Pantallas muy pequeñas */
+/* Pantallas muy pequeñas (menos de 380px) */
 @media (max-width: 380px) {
+  .teams-view-header__actions .btn {
+    font-size: 0.58rem; /* Aún más pequeño */
+    padding: 0.4rem 0.25rem;
+  }
+
+  .teams-view-header__actions {
+    gap: 0.35rem;
+  }
+
   .team-stats-summary > div {
     padding: 0.4rem 0.1rem;
   }
@@ -982,9 +1009,11 @@
   }
 
   .team-card .info-card__footer .btn {
-    font-size: 0.58rem;
-    padding: 0.5rem 0.2rem;
+    font-size: 0.55rem;
+    padding: 0.45rem 0.2rem;
   }
+
+  
 }
 
 /* ====================================================================
@@ -1032,6 +1061,7 @@
 
 .match-card__score--active { color: var(--accent-primary); border-color: var(--accent-primary); box-shadow: var(--glow-primary); }
 .match-card__score--finished { color: #fff; border-color: var(--accent-primary); background: rgba(0, 255, 157, 0.1); }
+
 
 /* ====================================================================
    5. MODALES Y FORMULARIOS
@@ -1104,3 +1134,176 @@
 }
 
 .auth-card__input:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px var(--accent-glow-soft); }
+
+/* ============================================================
+   CORRECCIÓN: BOTONES DE EQUIPOS EN MÓVIL
+   ============================================================ */
+
+/* Forzar que el header de equipos use el mismo estilo que ligas */
+.teams-view .view-section__header {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  gap: 1rem !important;
+  padding-left: 1rem !important;
+  margin-bottom: 2rem !important;
+  padding-bottom: 1.5rem !important;
+  border-bottom: 0.0625rem solid var(--border-subtle) !important;
+  position: relative !important;
+}
+
+/* Franja neón lateral izquierda */
+.teams-view .view-section__header::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 0.25rem !important;
+  height: 100% !important;
+  background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)) !important;
+  border-radius: var(--radius-full) !important;
+  box-shadow: 0 0 0.75rem var(--accent-primary) !important;
+}
+
+/* Contenedor del título */
+.teams-view .view-section__header-content {
+  flex: 1 !important;
+  min-width: 150px !important;
+}
+
+.teams-view .view-section__header-content .view-section__title {
+  font-size: clamp(1.2rem, 3vw, 1.8rem) !important;
+  font-weight: 900 !important;
+  color: var(--text-primary) !important;
+  text-transform: uppercase !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 0.25rem 0 !important;
+  line-height: 1.1 !important;
+}
+
+.teams-view .view-section__header-content .view-section__subtitle {
+  font-size: 0.85rem !important;
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+  margin: 0 !important;
+}
+
+/* Botones principales - contenedor */
+#btn-add-team,
+#btn-scan-team {
+  font-size: 0.8rem !important;
+  padding: 0.6rem 1.2rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04rem !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.3s ease !important;
+  white-space: nowrap !important;
+  border: 0.0625rem solid var(--border-subtle) !important;
+}
+
+#btn-add-team {
+  background: rgba(0, 255, 157, 0.1) !important;
+  color: var(--accent-primary) !important;
+  border-color: rgba(0, 255, 157, 0.3) !important;
+}
+
+#btn-add-team:hover {
+  background: rgba(0, 255, 157, 0.2) !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0.75rem rgba(0, 255, 157, 0.2) !important;
+}
+
+#btn-scan-team {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+#btn-scan-team:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--border-card-hover) !important;
+}
+
+/* ============================================================
+   RESPONSIVE MÓVIL - BOTONES MÁS PEQUEÑOS Y SEPARADOS
+   ============================================================ */
+@media (max-width: 640px) {
+  .teams-view .view-section__header {
+    flex-direction: column !important;
+    gap: 0.8rem !important;
+    padding-left: 0.75rem !important;
+  }
+
+  /* Los botones se ponen uno al lado del otro */
+  #btn-add-team,
+  #btn-scan-team {
+    font-size: 0.6rem !important;
+    padding: 0.45rem 0.3rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    letter-spacing: 0.02rem !important;
+    border-radius: 0.5rem !important;
+    text-transform: uppercase !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: inline-flex !important;
+    width: auto !important;
+  }
+
+  /* Contenedor de botones - los ponemos en fila */
+  .teams-view .view-section__header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* Hacemos que el título y los botones estén en fila en móvil */
+  .teams-view .view-section__header {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .teams-view .view-section__header-content {
+    flex: 1 1 100% !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Contenedor de botones - los ponemos en fila */
+  #btn-add-team,
+  #btn-scan-team {
+    flex: 1 1 auto !important;
+    min-width: 45% !important;
+    max-width: 48% !important;
+    margin: 0 !important;
+  }
+
+  #btn-add-team {
+    margin-right: 0.25rem !important;
+  }
+
+  #btn-scan-team {
+    margin-left: 0.25rem !important;
+  }
+
+  /* Eliminar el marginLeft que agrega JavaScript */
+  #btn-scan-team {
+    margin-left: 0.25rem !important;
+  }
+}
+
+/* Pantallas muy pequeñas */
+@media (max-width: 380px) {
+  #btn-add-team,
+  #btn-scan-team {
+    font-size: 0.55rem !important;
+    padding: 0.35rem 0.2rem !important;
+    letter-spacing: 0.01rem !important;
+    min-width: 42% !important;
+  }
+}
