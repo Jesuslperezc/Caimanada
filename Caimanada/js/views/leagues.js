@@ -618,7 +618,7 @@ async function openShareLeagueModal(leagueData, exportType) {
         <div style="display: flex; flex-direction: column; gap: 1rem;">
           <button id="btn-show-qr" class="btn btn--primary" style="width: 100%;">📱 Generar Código QR</button>
           <div id="qr-display-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
-            <img id="qr-image" src="" alt="Código QR" style="width: 220px; height: 220px;" />
+            <img id="qr-image" src="" alt="Código QR" style="width: 100%; height: auto; max-width: 350px;" />
             <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para sincronizar</p>
           </div>
         </div>
@@ -640,30 +640,43 @@ async function openShareLeagueModal(leagueData, exportType) {
       mode: leagueData.mode
     };
 
-        if (exportType === 'initial') {
+    if (exportType === 'initial') {
       const teams = await getTeamsByLeague(leagueData.id);
       
       const teamsWithPlayers = await Promise.all(teams.map(async (t) => {
         const players = await getPlayersByTeam(t.id);
         return {
-          id: t.id, name: t.name, sportId: t.sportId, delegate: t.delegate, color: t.color,
-          players: players.map(p => ({ id: p.id, name: p.name, number: p.number, position: p.position }))
+          id: t.id,
+          name: t.name,
+          sportId: t.sportId,
+          delegate: t.delegate,
+          color: t.color,
+          players: players.map(p => ({
+            id: p.id,
+            name: p.name,
+            number: p.number,
+            position: p.position
+          }))
         };
       }));
+
       payload.teams = teamsWithPlayers;
       
-  
-      payload.matches = await Promise.all(matches.map(async (m) => { 
-        const events = await MatchEventRepository.getEventsByMatch(m.id);
-        return { 
-          id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway, 
-          homeTeamId: m.homeTeamId, awayTeamId: m.awayTeamId, date: m.date, round: m.round || 1,
-          slot: m.slot || null, winnerGoesToMatchId: m.winnerGoesToMatchId,
-          events: events || [] 
-        };
+      // Payload de partidos ligero (SIN EVENTOS en el inicial para no saturar el QR)
+      payload.matches = matches.map(m => ({ 
+        id: m.id, 
+        status: m.status, 
+        scoreHome: m.scoreHome, 
+        scoreAway: m.scoreAway, 
+        homeTeamId: m.homeTeamId, 
+        awayTeamId: m.awayTeamId, 
+        date: m.date, 
+        round: m.round || 1,
+        slot: m.slot || null,                       
+        winnerGoesToMatchId: m.winnerGoesToMatchId  
       }));
     } else {
-
+      // EN LAS ACTUALIZACIONES (SYNC), SÍ MANDAMOS LOS EVENTOS
       payload.matches = await Promise.all(matches.map(async (m) => {
         const events = m.status === 'completed' ? await MatchEventRepository.getEventsByMatch(m.id) : [];
         return { id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway, events: events || [] };
@@ -671,7 +684,8 @@ async function openShareLeagueModal(leagueData, exportType) {
     }
 
     const qrPayload = buildQRPayload(exportType === 'update' ? 'LEAGUE_UPDATE' : 'LINK_LEAGUE', payload);
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
+    // AUMENTAMOS EL TAMAÑO A 500x500 PARA MEJORAR LA LECTURA
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qrPayload)}`;
     document.getElementById('qr-image').src = qrApiUrl;
     document.getElementById('qr-display-container').style.display = 'flex';
   };
