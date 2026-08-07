@@ -45,26 +45,21 @@ export async function renderDashboardView() {
   const leagueMode = activeLeague.mode || 'Liga';
   const matchWord = leagueMode.includes('Liga') ? 'Jornada' : 'Fase';
 
-  // Pintar los datos básicos de la liga activa SIEMPRE
   document.getElementById('dash-league-name').textContent = activeLeague.name || 'Liga Activa';
   document.getElementById('dash-league-mode').textContent = leagueMode;
   document.getElementById('mvp-title-label').textContent = `El Rey de la CaimanaDa 🐊 (${pointsPlural})`;
   document.getElementById('leader-label').textContent = leagueMode.includes('Liga') ? 'Líder de la Tabla' : 'Favorito al Título';
   document.getElementById('next-match-label').textContent = 'Próximo Enfrentamiento';
 
-  // Ocultar o mostrar tarjeta de Bracket
   if (leagueMode.includes('Eliminación')) {
     if (bracketCard) bracketCard.style.display = 'block';
   } else {
     if (bracketCard) bracketCard.style.display = 'none';
   }
 
-  // Obtener datos de la BD
   const teams = await getTeamsByLeague(activeLeague.id) || [];
   const matches = await getMatchesByLeague(activeLeague.id) || [];
   const standings = calculateStandings(teams, matches) || [];
-
-  // Partidos ya jugados (necesario para Termómetro y MVP)
   const completedMatches = matches.filter(m => m.status === 'completed');
 
   // --- Próximo Partido ---
@@ -217,30 +212,48 @@ export async function renderDashboardView() {
     }
   }
 
+  // --- GRÁFICA DE CHART.JS (Con manejo de estado vacío) ---
   const ctx = document.getElementById('canvas-dashboard-stats');
-  if (ctx && standings.length > 0) {
-    dashboardChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: standings.map(s => s.name),
-        datasets: [{
-          label: 'Puntos Totales',
-          data: standings.map(s => s.pts),
-          backgroundColor: 'rgba(0, 168, 107, 0.6)',
-          borderColor: 'rgba(0, 168, 107, 1)',
-          borderWidth: 1,
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-          x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+  const chartWrapper = ctx ? ctx.parentElement : null;
+  
+  if (ctx && chartWrapper) {
+    // Limpiamos el mensaje de "No hay datos" si existe
+    const existingMsg = document.getElementById('no-data-dashboard-msg');
+    if (existingMsg) existingMsg.remove();
+
+    if (standings.length > 0 && standings.some(s => s.pts > 0 || s.pj > 0)) {
+      ctx.style.display = 'block'; // Mostramos el canvas
+      dashboardChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: standings.map(s => s.name),
+          datasets: [{
+            label: 'Puntos Totales',
+            data: standings.map(s => s.pts),
+            backgroundColor: 'rgba(0, 168, 107, 0.6)',
+            borderColor: 'rgba(0, 168, 107, 1)',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+          }
         }
-      }
-    });
+      });
+    } else {
+      // Ocultamos el canvas y mostramos mensaje
+      ctx.style.display = 'none';
+      const msg = document.createElement('p');
+      msg.id = 'no-data-dashboard-msg';
+      msg.style.cssText = 'text-align: center; padding: 3rem 1rem; color: #64748b; font-size: 0.9rem;';
+      msg.textContent = 'No hay datos registrados';
+      chartWrapper.appendChild(msg);
+    }
   }
 }

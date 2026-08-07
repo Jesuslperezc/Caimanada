@@ -13,6 +13,25 @@ export function renderLeagueStatsChart(canvasId, leaguesData) {
 
   destroyChart(canvasId);
 
+  const chartWrapper = canvas.parentElement;
+  if (!chartWrapper) return;
+
+  // Limpiar mensaje anterior si existe
+  const existingMsg = document.getElementById(`no-data-msg-${canvasId}`);
+  if (existingMsg) existingMsg.remove();
+
+  // Validar si hay datos para mostrar
+  if (!leaguesData || leaguesData.length === 0 || leaguesData.every(l => l.teamsCount === 0)) {
+    canvas.style.display = 'none';
+    const msg = document.createElement('p');
+    msg.id = `no-data-msg-${canvasId}`;
+    msg.style.cssText = 'text-align: center; padding: 3rem 1rem; color: #64748b; font-size: 0.9rem;';
+    msg.textContent = 'No hay datos registrados';
+    chartWrapper.appendChild(msg);
+    return;
+  }
+
+  canvas.style.display = 'block';
   const labels = leaguesData.map(l => l.name);
   const teamsCounts = leaguesData.map(l => l.teamsCount || 0);
   const topWinsCounts = leaguesData.map(l => l.topTeamWins || 0);
