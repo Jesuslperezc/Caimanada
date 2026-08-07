@@ -3,7 +3,7 @@
 const TUTORIAL_STEPS = [
   {
     target: '#active-sport-badge',
-    text: '¡Bienvenido a CaimanaDa! Primero, selecciona el deporte que vas a gestionar.',
+    text: '¡Bienvenido a Caimanada! Primero, selecciona el deporte que vas a gestionar.',
     event: 'change'
   },
   {

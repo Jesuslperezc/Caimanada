@@ -84,7 +84,7 @@ export function stopQRScanner() {
  */
 export function buildQRPayload(type, payload) {
   return JSON.stringify({
-    app: 'CaimanaDa',
+    app: 'Caimanada',
     version: '1.0',
     type,
     timestamp: Date.now(),

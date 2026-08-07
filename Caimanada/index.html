@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="CaimanaDa — Sistema de Gestión de Ligas y Torneos Deportivos">
+  <meta name="description" content="Caimanada — Sistema de Gestión de Ligas y Torneos Deportivos">
   <meta name="theme-color" content="#0F172A">
-  <title>CaimanaDa — Gestor de Ligas</title>
+  <title>Caimanada — Gestor de Ligas</title>
 
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/svg+xml" href="./assets/Caimanada_logo.png">
@@ -21,7 +21,7 @@
     <div class="app-header__container">
       
       <!-- Logo (Imagen PNG) -->
-      <a href="#dashboard" class="app-header__brand" id="brand-logo" aria-label="Ir al Inicio de CaimanaDa">
+      <a href="#dashboard" class="app-header__brand" id="brand-logo" aria-label="Ir al Inicio de Caimanada">
         <img src="assets/Caimanada.png" alt="Logo CaimanaDa" class="app-header__logo-img">
       </a>
 
@@ -45,7 +45,6 @@
 
       <!-- Selector de Deporte -->
       <div class="sport-badge" id="active-sport-badge" role="status" aria-live="polite">
-
         <select class="sport-badge__select" id="active-sport-selector" title="Cambiar deporte activo">
           <!-- Las opciones se inyectarán por JavaScript -->
         </select>
@@ -58,7 +57,6 @@
   <main class="app-content" id="app-router-view">
 
     <!-- Vista: Dashboard -->
-
     <section class="view-section dashboard-view" id="dashboard-section" aria-labelledby="active-league-title">
       <header class="view-section__header" id="dashboard-header">
         
@@ -74,11 +72,11 @@
         <!-- Estado de Liga Activa -->
         <div id="active-league-info" style="display: none; width: 100%;">
           
-          <div class="dashboard-header-row">
-            <div class="dashboard-titles">
-              <h1 class="view-section__title" id="dash-league-name" style="margin-bottom: 0.25rem;"></h1>
-              <p class="view-section__subtitle" id="dash-league-mode" style="margin: 0;"></p>
-            </div>
+          <!-- SE CORRIGIÓ EL DIV FALTANTE AQUÍ -->
+          <div class="dashboard-titles" style="margin-bottom: 2rem;">
+            <h1 class="view-section__title" id="dash-league-name" style="margin-bottom: 0.25rem;"></h1>
+            <p class="view-section__subtitle" id="dash-league-mode" style="margin: 0;"></p>
+          </div>
 
           <div class="dashboard-view__grid">
             <!-- Próximo Partido (Contextualizado) -->
@@ -110,7 +108,7 @@
             <!-- Idea 2: Termómetro de Rachas -->
             <article class="info-card" id="card-momentum">
               <header class="info-card__header">
-                <h2 class="info-card__label">Caiman-mómetro </h2>
+                <h2 class="info-card__label">Caiman-mómetro</h2>
               </header>
               <div class="info-card__body momentum-grid">
                 <div class="momentum-item">
@@ -130,7 +128,7 @@
             <!-- Idea 4: MVP de la Jornada -->
             <article class="info-card mvp-card" id="card-mvp">
               <header class="info-card__header">
-                <h2 class="info-card__label mvp-label" id="mvp-title-label">El Rey de la Caimana </h2>
+                <h2 class="info-card__label mvp-label" id="mvp-title-label">El Rey de la Caimana</h2>
               </header>
               <div class="info-card__body">
                 <p class="info-card__highlight mvp-name" id="mvp-player-name">Sin datos aún</p>
@@ -207,7 +205,7 @@
     <!-- Vista: Partidos -->
     <section class="view-section matches-view is-hidden" id="matches-section" aria-labelledby="matches-title">
       <header class="view-section__header">
-        <h1 class="view-section__title" id="matches-title">Calendario de Partidos</h1>
+
         <p class="view-section__subtitle">Partidos, marcadores en vivo y resultados</p>
       </header>
       <div class="view-section__container" id="matches-content-target"></div>
@@ -285,16 +283,15 @@
 
   </ul>
 </nav>
-  <script type="module" src="./js/app.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script type="module" src="./js/app.js"></script>
   
- 
+  <!-- SE ELIMINARON LOS CONSOLE.LOG AQUÍ -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker registrado con éxito.', reg))
-          .catch(err => console.warn('Error registrando el Service Worker:', err));
+        navigator.serviceWorker.register('./sw.js');
       });
     }
   </script>

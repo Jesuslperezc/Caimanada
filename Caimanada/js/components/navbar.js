@@ -142,10 +142,11 @@ function openProfileModal() {
     }
   };
 
-  document.getElementById('btn-logout').onclick = async () => {
-    if (confirm("⚠️ ADVERTENCIA ⚠️\n\n¿Estás absolutamente seguro?\n\nAl cerrar sesión, se BORRARÁN PERMANENTEMENTE:\n- Tu usuario y preferencias\n- Todas las ligas, equipos y partidos guardados localmente en este dispositivo.\n\nEsta acción no se puede deshacer.")) {
+   document.getElementById('btn-logout').onclick = async () => {
+    const wasLoggedOut = await fullLogout();
+    
+    if (wasLoggedOut) {
       AlertService.showWarning('Cerrando sesión y borrando base de datos local...', 'ADIOS');
-      await fullLogout();
       setTimeout(() => window.location.reload(), 1000);
     }
   };

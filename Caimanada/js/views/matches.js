@@ -71,12 +71,27 @@ export async function renderMatchesView() {
   renderStandingsTable(teams, matches);
 }
 
-function openEditMatchModal(match, teamsMap) {
+// --- MODAL PARA EDITAR FECHA DE PARTIDO (CON VALIDACIÓN DE RANGO) ---
+function openEditMatchModal(match, teamsMap, league) {
   document.getElementById('dynamic-edit-match-modal')?.remove();
-  let dateVal = '';
-  if (match.date) { const d = new Date(match.date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); dateVal = d.toISOString().slice(0, 16); }
+  
+  const formatToLocalInput = (date) => {
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  };
+  
+  // Rango de fechas permitidas
+  const leagueStart = new Date(league.startDate);
+  const leagueEnd = new Date(league.endDate);
+  const minDateStr = formatToLocalInput(leagueStart);
+  const maxDateStr = formatToLocalInput(leagueEnd);
+  
+  let dateVal = formatToLocalInput(match.date || league.startDate);
+  
   const homeName = teamsMap[match.homeTeamId]?.name || 'Por definir';
   const awayName = teamsMap[match.awayTeamId]?.name || 'Por definir';
+  
   document.body.insertAdjacentHTML('beforeend', `
     <div id="dynamic-edit-match-modal" class="modal-overlay">
       <div class="modal-card" style="max-width: 400px;">
@@ -84,7 +99,8 @@ function openEditMatchModal(match, teamsMap) {
         <p style="text-align:center; margin-bottom:1rem; font-weight:bold;">${escapeHTML(homeName)} vs ${escapeHTML(awayName)}</p>
         <div class="form-group" style="margin-bottom: 1.5rem;">
           <label class="form-group__label">Nueva Fecha y Hora</label>
-          <input type="datetime-local" id="edit-match-date" required class="form-control" value="${dateVal}" />
+          <input type="datetime-local" id="edit-match-date" required class="form-control" value="${dateVal}" min="${minDateStr}" max="${maxDateStr}" />
+          <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">Debe estar entre ${leagueStart.toLocaleDateString()} y ${leagueEnd.toLocaleDateString()}.</p>
         </div>
         <div class="modal-actions">
           <button type="button" id="edit-match-cancel" class="btn btn--secondary">Cancelar</button>
@@ -92,14 +108,25 @@ function openEditMatchModal(match, teamsMap) {
         </div>
       </div>
     </div>`);
+    
   const modalEl = document.getElementById('dynamic-edit-match-modal');
   document.getElementById('edit-match-cancel').onclick = () => modalEl.remove();
   modalEl.onclick = (e) => { if (e.target === modalEl) modalEl.remove(); };
+  
   document.getElementById('edit-match-save').onclick = async () => {
     const newDate = document.getElementById('edit-match-date').value;
     if (!newDate) { AlertService.showError('Selecciona una fecha.'); return; }
-    await updateMatch({ ...match, date: new Date(newDate).toISOString() });
-    AlertService.showSuccess('Fecha actualizada.'); modalEl.remove(); renderMatchesView();
+    
+    const chosenDate = new Date(newDate);
+    if (chosenDate < leagueStart || chosenDate > leagueEnd) {
+      AlertService.showError('La fecha seleccionada está fuera de la duración de la liga.');
+      return;
+    }
+    
+    await updateMatch({ ...match, date: chosenDate.toISOString() });
+    AlertService.showSuccess('Fecha actualizada.'); 
+    modalEl.remove(); 
+    renderMatchesView();
   };
 }
 
@@ -133,7 +160,15 @@ function renderMatchesList(matches, teamsMap, league) {
         </div>
       </article>`;
   }).join('');
-  grid.querySelectorAll('.btn-edit-match').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const match = matches.find(m => m.id === btn.dataset.id); if(match) openEditMatchModal(match, teamsMap); }; });
+  
+  // Se le pasa 'league' a openEditMatchModal
+  grid.querySelectorAll('.btn-edit-match').forEach(btn => { 
+    btn.onclick = (e) => { 
+      e.stopPropagation(); 
+      const match = matches.find(m => m.id === btn.dataset.id); 
+      if(match) openEditMatchModal(match, teamsMap, league); 
+    }; 
+  });
   grid.querySelectorAll('.btn-delete-match').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); showConfirmDialog('¿Estás seguro de eliminar este partido?', async () => { await deleteMatch(btn.dataset.id); AlertService.showWarning('Partido eliminado.'); renderMatchesView(); }); }; });
 }
 
@@ -309,8 +344,6 @@ window.addLiveEvent = function(type, pointsValue = 1) {
   }
   const ps = document.getElementById('live-player-select'); 
   if (ps.disabled || !ps.value) { AlertService.showError('Selecciona un jugador.'); return; }
-  // ... (continúa el resto del código de abajo, no lo borres)
-  if (ps.disabled || !ps.value) { AlertService.showError('Selecciona un jugador.'); return; }
   const t = document.getElementById('live-team-select').value;
   const rival = t === 'home' ? 'away' : 'home';
   const p = (t === 'home' ? window._liveData.homePlayers : window._liveData.awayPlayers).find(pl => pl.id === ps.value);
@@ -385,8 +418,6 @@ window.addLiveEvent = function(type, pointsValue = 1) {
 window.togglePlayPause = function() { if (!activeChronometer) return; if (activeChronometer.isRunning) activeChronometer.pause(); else activeChronometer.start(); updatePlayPauseBtn(); };
 window.nextPeriod = function() { if (!activeChronometer) return; if (!activeChronometer.config.hasClock) activeChronometer.nextPeriod(); else activeChronometer.startBreak(activeChronometer.currentPeriodIndex === 1); updatePlayPauseBtn(); };
 
-window.nextPeriod = function() { if (!activeChronometer) return; if (!activeChronometer.config.hasClock) activeChronometer.nextPeriod(); else activeChronometer.startBreak(activeChronometer.currentPeriodIndex === 1); updatePlayPauseBtn(); };
-
 window.skipBreak = function() {
   if (!activeChronometer || !activeChronometer.isBreak) return;
   activeChronometer.pause(); 
@@ -394,6 +425,7 @@ window.skipBreak = function() {
   activeChronometer.nextPeriod(); 
   updatePlayPauseBtn();
 };
+
 window.finishLiveMatch = async function(matchId, leagueId) {
   if (!activeChronometer) return;
   const scoreHome = window._liveData.scoreHome; const scoreAway = window._liveData.scoreAway; const evts = [...liveMatchEvents];

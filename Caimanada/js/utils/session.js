@@ -18,6 +18,21 @@ export function initSession(onLoginSuccess) {
 }
 
 function showLoginScreen(onLoginSuccess) {
+  // --- DETECCIÓN DE iOS PARA PWA ---
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  
+  let iosInstallMsg = '';
+  // Si es iPhone/iPad y NO está corriendo como app instalada (standalone)
+  if (isIOS && !isStandalone) {
+    iosInstallMsg = `
+      <div style="margin-top: 1.5rem; padding: 0.8rem 1rem; background: rgba(0, 168, 107, 0.1); border: 1px solid var(--accent-primary, #00A86B); border-radius: 8px; font-size: 0.8rem; color: #cbd5e1; text-align: left; line-height: 1.4;">
+        <strong style="color: var(--accent-primary, #00A86B); display: block; margin-bottom: 0.3rem; font-size: 0.85rem;">📱 ¿Usas iPhone o iPad?</strong>
+        Para tener CaimanaDa como una app: presiona el botón <strong>Compartir</strong> (cuadrado con flecha hacia arriba) en Safari y selecciona <strong>"Añadir a inicio"</strong>.
+      </div>
+    `;
+  }
+
   const overlay = document.createElement('div');
   overlay.className = 'auth-overlay';
   overlay.id = 'auth-overlay';
@@ -38,6 +53,8 @@ function showLoginScreen(onLoginSuccess) {
         <input type="text" id="auth-name" class="auth-card__input" placeholder="Tu nombre o apodo" required>
         <button type="submit" class="auth-card__btn">Comenzar a Caimanear</button>
       </form>
+
+      ${iosInstallMsg}
     </div>
   `;
   document.body.appendChild(overlay);
@@ -111,7 +128,6 @@ function showLogoutConfirmModal() {
       resolve(false);
     };
     
-    // Si se hace clic fuera del modal, cerrar y cancelar
     modalEl.onclick = (e) => { 
       if (e.target === modalEl) {
         modalEl.remove();
@@ -127,19 +143,16 @@ function showLogoutConfirmModal() {
 }
 
 export async function fullLogout() {
-  // 1. Mostrar modal de confirmación y esperar respuesta
   const confirmed = await showLogoutConfirmModal();
-  if (!confirmed) return false; // Si cancela, no hacemos nada
+  if (!confirmed) return false;
 
-  // 2. Limpiar LocalStorage
   localStorage.clear();
 
-  // 3. Borrar IndexedDB y recargar la página
   return new Promise((resolve) => {
     const req = indexedDB.deleteDatabase('caimanada_db');
     
     req.onsuccess = () => {
-      window.location.reload(); // Recarga la app para mostrar el login
+      window.location.reload();
       resolve(true);
     };
     
@@ -150,7 +163,6 @@ export async function fullLogout() {
     };
     
     req.onblocked = () => {
-      // A veces pasa si hay transacciones abiertas. Forzamos recarga.
       console.warn('Borrado de DB bloqueado, recargando página...');
       window.location.reload();
       resolve(true);

@@ -47,7 +47,7 @@ export async function renderDashboardView() {
 
   document.getElementById('dash-league-name').textContent = activeLeague.name || 'Liga Activa';
   document.getElementById('dash-league-mode').textContent = leagueMode;
-  document.getElementById('mvp-title-label').textContent = `El Rey de la CaimanaDa 🐊 (${pointsPlural})`;
+  document.getElementById('mvp-title-label').textContent = `El Rey de la Caimana (${pointsPlural})`;
   document.getElementById('leader-label').textContent = leagueMode.includes('Liga') ? 'Líder de la Tabla' : 'Favorito al Título';
   document.getElementById('next-match-label').textContent = 'Próximo Enfrentamiento';
 

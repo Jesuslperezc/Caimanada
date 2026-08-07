@@ -37,7 +37,7 @@ export async function renderLeaguesView() {
       <header class="leagues-header">
         <div>
           <h1 class="view-title">Gestión de Ligas</h1>
-          <p class="view-subtitle">Crea, administra y activa los torneos de CaimanaDa</p>
+          <p class="view-subtitle">Crea, administra y activa los torneos de Caimanada</p>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <button id="btn-import-league" class="btn btn--secondary">📥 Importar Liga</button>
@@ -575,7 +575,7 @@ function openImportTeamScanner(leagueData) {
   const handleScanSuccess = async (rawData) => {
     try {
       let parsed = JSON.parse(rawData);
-      if (parsed.app !== 'CaimanaDa' || parsed.type !== 'IMPORT_TEAM') {
+      if (parsed.app !== 'Caimanada' || parsed.type !== 'IMPORT_TEAM') {
         throw new Error('Este QR no pertenece a un equipo.');
       }
       
@@ -783,7 +783,6 @@ function openGuestUpdateScanner(league) {
     }
   }, (err) => { AlertService.showError('No se pudo acceder a la cámara.', 'ERROR DE CÁMARA'); });
 }
-
 async function handleGenerateFixture(league, mode) {
   const isLiga = mode.includes('Liga');
   const isIdaYVuelta = mode.includes('Ida y vuelta');
@@ -802,33 +801,57 @@ async function handleGenerateFixture(league, mode) {
   if (isLiga) generatedMatches = generateLeagueFixture(league.id, teams, isIdaYVuelta);
   else generatedMatches = generateEliminationBracket(league.id, teams, requiredTeams);
 
-  openFixtureConfigModal(generatedMatches, teams);
+  openFixtureConfigModal(generatedMatches, teams, league);
 }
 
-function openFixtureConfigModal(matches, teamsList) {
+function openFixtureConfigModal(matches, teamsList, leagueData) {
   document.getElementById('dynamic-fixture-modal')?.remove();
   const teamsObj = Object.fromEntries(teamsList.map(t => [t.id, t.name]));
+  
+  // Calculamos el rango de fechas permitidas (desde el inicio hasta el final de la liga)
+  const leagueStart = new Date(leagueData.startDate);
+  const leagueEnd = new Date(leagueData.endDate);
+  
+  const formatToLocalInput = (date) => {
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  };
+  
+  const minDateStr = formatToLocalInput(leagueStart);
+  const maxDateStr = formatToLocalInput(leagueEnd);
+
   let matchesHTML = '';
   matches.forEach((m, index) => {
     const homeName = m.homeTeamId === 'TBD' ? 'Por definir' : (teamsObj[m.homeTeamId] || 'Eliminado');
     const awayName = m.awayTeamId === 'TBD' ? 'Por definir' : (teamsObj[m.awayTeamId] || 'Eliminado');
-    const d = new Date(m.date);
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); 
-    const dateVal = d.toISOString().slice(0, 16);
+    
+    // Si la fecha generada está fuera de rango, la forzamos al primer día válido
+    let dateVal = minDateStr;
+    if (m.date) {
+      const d = new Date(m.date);
+      if (d >= leagueStart && d <= leagueEnd) {
+        dateVal = formatToLocalInput(d);
+      }
+    }
+    
     matchesHTML += `
       <div class="info-card" style="padding: 0.75rem; display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem;">
         <span style="flex:1; text-align:right; font-weight:bold; font-size:0.85rem;">${homeName}</span>
         <span style="color:#64748b; font-weight:bold;">VS</span>
         <span style="flex:1; text-align:left; font-weight:bold; font-size:0.85rem;">${awayName}</span>
-        <input type="datetime-local" class="form-control fixture-date-input" data-index="${index}" value="${dateVal}" style="width: 180px; padding: 0.3rem; font-size: 0.8rem;" />
+        <input type="datetime-local" class="form-control fixture-date-input" data-index="${index}" value="${dateVal}" min="${minDateStr}" max="${maxDateStr}" style="width: 180px; padding: 0.3rem; font-size: 0.8rem;" required />
       </div>`;
   });
+
+  const startStr = leagueStart.toLocaleDateString('es-ES');
+  const endStr = leagueEnd.toLocaleDateString('es-ES');
 
   const modalHTML = `
     <div id="dynamic-fixture-modal" class="modal-overlay">
       <div class="modal-card" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
         <h2 class="modal-card__title">Organizar Calendario</h2>
-        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">Ajusta las fechas y horas de los encuentros. Al guardar, se crearán en el sistema.</p>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">Ajusta las fechas y horas. Los partidos deben jugarse obligatoriamente entre el <strong>${startStr}</strong> y el <strong>${endStr}</strong>.</p>
         <div id="fixture-list-container">${matchesHTML}</div>
         <div class="modal-actions" style="margin-top: 1.5rem; justify-content: flex-end;">
           <button type="button" id="btn-cancel-fixture" class="btn btn--secondary">Cancelar</button>
@@ -836,6 +859,7 @@ function openFixtureConfigModal(matches, teamsList) {
         </div>
       </div>
     </div>`;
+    
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   const modalEl = document.getElementById('dynamic-fixture-modal');
   document.getElementById('btn-cancel-fixture').onclick = () => modalEl.remove();
@@ -843,10 +867,28 @@ function openFixtureConfigModal(matches, teamsList) {
 
   document.getElementById('btn-save-fixture').onclick = async () => {
     const dateInputs = document.querySelectorAll('.fixture-date-input');
+    let isValid = true;
+    
     dateInputs.forEach(input => {
       const idx = parseInt(input.dataset.index);
-      if (input.value) matches[idx].date = new Date(input.value).toISOString();
+      if (input.value) {
+        const chosenDate = new Date(input.value);
+        // Validación estricta en JS por si el usuario hace trampa
+        if (chosenDate < leagueStart || chosenDate > leagueEnd) {
+          isValid = false;
+        } else {
+          matches[idx].date = chosenDate.toISOString();
+        }
+      } else {
+        isValid = false;
+      }
     });
+    
+    if (!isValid) {
+      AlertService.showError('Revisa las fechas. Todos los partidos deben tener una fecha válida dentro de la duración de la liga.');
+      return;
+    }
+    
     try {
       await bulkInsertFullMatches(matches);
       AlertService.showChampion(`¡Se guardaron ${matches.length} partidos exitosamente!`, 'FIXTURE LISTO');

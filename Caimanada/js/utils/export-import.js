@@ -17,8 +17,8 @@ export async function handleImportData(rawData) {
     throw new Error('El código QR no contiene un formato JSON válido.');
   }
 
-  if (parsed.app !== 'CaimanaDa') {
-    throw new Error('El código QR escaneado no pertenece a la aplicación CaimanaDa.');
+  if (parsed.app !== 'Caimanada') {
+    throw new Error('El código QR escaneado no pertenece a la aplicación Caimanada.');
   }
 
   const { type, payload } = parsed;
@@ -223,7 +223,7 @@ export async function exportLeagueToJson(leagueData) {
     }));
 
     const fullLeagueBackup = {
-      app: 'CaimanaDa', version: '1.0', type: 'FULL_BACKUP',
+      app: 'Caimanada', version: '1.0', type: 'FULL_BACKUP',
       exportedAt: new Date().toISOString(),
       league: leagueData, teams: teamsWithPlayers, matches: matchesWithEvents
     };
@@ -233,7 +233,7 @@ export async function exportLeagueToJson(leagueData) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `CaimanaDa_${leagueData.name.replace(/\s/g, '_')}.json`;
+    a.download = `Caimanada_${leagueData.name.replace(/\s/g, '_')}.json`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return { success: true, message: 'Liga exportada correctamente.' };
@@ -251,8 +251,8 @@ export async function importLeagueFromJsonFile(file) {
     reader.onload = async (e) => {
       try {
         const parsed = JSON.parse(e.target.result);
-        if (parsed.app !== 'CaimanaDa' || parsed.type !== 'FULL_BACKUP') {
-          return reject(new Error('El archivo no es un respaldo válido de CaimanaDa.'));
+        if (parsed.app !== 'Caimanada' || parsed.type !== 'FULL_BACKUP') {
+          return reject(new Error('El archivo no es un respaldo válido de Caimanada.'));
         }
         
         const now = new Date();
