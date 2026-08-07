@@ -40,7 +40,7 @@ export async function renderLeaguesView() {
           <p class="view-subtitle">Crea, administra y activa los torneos de Caimanada</p>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button id="btn-import-league" class="btn btn--secondary">📥 Importar Liga</button>
+          <button id="btn-import-league" class="btn btn--secondary">Importar Liga</button>
           <button id="btn-open-create-modal" class="btn btn--primary">+ Crear Nueva Liga</button>
         </div>
       </header>
@@ -213,25 +213,25 @@ async function renderLeaguesCards(leagues, activeLeague) {
     let secondaryActionBtn = '';
 
     if (isGuest) {
-      primaryActionBtn = `<button class="btn btn--primary btn--sm btn-guest-update" data-id="${safeId}">🔄 Actualizar</button>`;
+      primaryActionBtn = `<button class="btn btn--primary btn--sm btn-guest-update" data-id="${safeId}">Actualizar</button>`;
       secondaryActionBtn = '<div></div>';
     } else {
       if (league.isFinished) {
-        primaryActionBtn = '<span style="color: #f59e0b; font-weight: bold; text-align: center; padding: 0.4rem;">🏁 FINALIZADA</span>';
+        primaryActionBtn = '<span style="color: #f59e0b; font-weight: bold; text-align: center; padding: 0.4rem;">FINALIZADA</span>';
         secondaryActionBtn = '<div></div>';
       } else if (allMatchesPlayed) {
-        primaryActionBtn = `<button class="btn btn--primary btn--sm btn-final-results" data-id="${safeId}">🏆 Finalizar</button>`;
+        primaryActionBtn = `<button class="btn btn--primary btn--sm btn-final-results" data-id="${safeId}">Finalizar</button>`;
         secondaryActionBtn = '<div></div>';
       } else {
         if (canExport) {
-          primaryActionBtn = `<button class="btn btn--secondary btn--sm btn-export-league" data-id="${safeId}">📤 Exportar</button>`;
+          primaryActionBtn = `<button class="btn btn--secondary btn--sm btn-export-league" data-id="${safeId}">Exportar</button>`;
         } else {
           let reason = !meetsTeamRequirements ? `Faltan equipos (Req: ${requiredTeams})` : 'Los equipos deben tener al menos 1 jugador (capitán)';
-          primaryActionBtn = `<button class="btn btn--secondary btn--sm" disabled style="opacity: 0.5; cursor: not-allowed;" title="${reason}">🔒 Bloqueado</button>`;
+          primaryActionBtn = `<button class="btn btn--secondary btn--sm" disabled style="opacity: 0.5; cursor: not-allowed;" title="${reason}">Bloqueado</button>`;
         }
         
         if (hasStartedPlaying) {
-          secondaryActionBtn = `<button class="btn btn--secondary btn--sm btn-export-update" data-id="${safeId}">📤 Sync</button>`;
+          secondaryActionBtn = `<button class="btn btn--secondary btn--sm btn-export-update" data-id="${safeId}">Sync</button>`;
         } else {
           secondaryActionBtn = '<div></div>';
         }
@@ -240,7 +240,7 @@ async function renderLeaguesCards(leagues, activeLeague) {
     
     let importTeamsBtn = '';
     if (!isGuest && !allMatchesPlayed && matches.length === 0) {
-      importTeamsBtn = `<button class="btn btn--secondary btn--sm btn-import-teams" data-id="${safeId}">📷 Importar</button>`;
+      importTeamsBtn = `<button class="btn btn--secondary btn--sm btn-import-teams" data-id="${safeId}">Importar</button>`;
     } else {
       importTeamsBtn = '<div></div>';
     }
@@ -268,17 +268,17 @@ async function renderLeaguesCards(leagues, activeLeague) {
           <div class="league-card__actions">
             ${isActive 
               ? '<span class="league-card__active-label">✓ LIGA ACTIVA</span>' 
-              : `<button class="btn btn--secondary btn--sm btn-set-active" data-id="${safeId}">✅ Activar</button>`
+              : `<button class="btn btn--secondary btn--sm btn-set-active" data-id="${safeId}">Activar</button>`
             }
             
-            ${!isGuest ? `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">✏️ Editar</button>` : '<div></div>'}
-            ${!isGuest ? `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">⚡ Partidos</button>` : '<div></div>'}
+            ${!isGuest ? `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">Editar</button>` : '<div></div>'}
+            ${!isGuest ? `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">Partidos</button>` : '<div></div>'}
             
             ${importTeamsBtn}
             ${primaryActionBtn}
             ${secondaryActionBtn}
             
-            <button class="btn btn--sm btn-danger btn-delete-league" data-id="${safeId}">🗑️ Borrar</button>
+            <button class="btn btn--sm btn-danger btn-delete-league" data-id="${safeId}">Borrar</button>
             ${isGuest ? '<div></div>' : ''} 
           </div>
         </footer>
@@ -471,7 +471,7 @@ function openImportLeagueModal() {
           
           <div style="text-align: center; color: #64748b; font-size: 0.8rem; margin: 0.5rem 0;">- O -</div>
 
-          <button id="btn-upload-league-json" class="btn btn--secondary" style="width: 100%;">📁 Subir Archivo JSON</button>
+          <button id="btn-upload-league-json" class="btn btn--secondary" style="width: 100%;">Subir Archivo JSON</button>
           <input type="file" id="league-json-input" accept=".json" style="display: none;">
 
           <div id="qr-league-video-container" style="display: none; border-radius: 8px; overflow: hidden; margin-top: 1rem;">
@@ -702,7 +702,7 @@ async function openFinalResultsModal(leagueData) {
         <h2 class="modal-card__title">Última Sincronización</h2>
         <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">Genera este QR para que los invitados actualicen los resultados y estadísticas finales de la liga.</p>
         <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <button id="btn-show-qr" class="btn btn--primary" style="width: 100%;">📱 Generar Código QR Final</button>
+          <button id="btn-show-qr" class="btn btn--primary" style="width: 100%;">Generar Código QR Final</button>
           <div id="qr-display-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
             <img id="qr-image" src="" alt="Código QR" style="width: 100%; height: auto; max-width: 350px;" />
             <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para sincronizar</p>
@@ -855,7 +855,7 @@ function openFixtureConfigModal(matches, teamsList, leagueData) {
         <div id="fixture-list-container">${matchesHTML}</div>
         <div class="modal-actions" style="margin-top: 1.5rem; justify-content: flex-end;">
           <button type="button" id="btn-cancel-fixture" class="btn btn--secondary">Cancelar</button>
-          <button type="button" id="btn-save-fixture" class="btn btn--primary">💾 Guardar Todo el Fixture</button>
+          <button type="button" id="btn-save-fixture" class="btn btn--primary">Guardar el partido</button>
         </div>
       </div>
     </div>`;
