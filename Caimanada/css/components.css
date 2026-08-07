@@ -48,6 +48,36 @@
   filter: drop-shadow(0 0 0.9375rem var(--accent-primary));
 }
 
+/* --- AVATAR DE USUARIO (ESQUINA SUPERIOR DERECHA) ---
+   renderUserAvatar() en navbar.js inserta un <img class="app-header__user-avatar">
+   directo dentro de .app-header__container (que es position: relative).
+   Sin esta regla el <img> no tiene ancho/alto/object-fit, así que se
+   renderiza a su tamaño nativo y desborda el header. */
+.app-header__user-avatar {
+  position: absolute;
+  top: 50%;
+  right: 1.5rem;
+  transform: translateY(-50%);
+  width: 2.75rem;
+  height: 2.75rem;
+  max-width: 2.75rem;
+  max-height: 2.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  border: 0.125rem solid rgba(0, 255, 157, 0.25);
+  box-shadow: 0 0 0.75rem rgba(0, 255, 157, 0.1);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.app-header__user-avatar:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 1.25rem rgba(0, 255, 157, 0.25);
+  transform: translateY(-50%) scale(1.08);
+}
+
 /* --- NAVEGACIÓN ESCRITORIO --- */
 .nav-desktop {
   justify-self: start;
@@ -224,6 +254,14 @@
   }
   .app-header__logo-img {
     height: 2.5rem !important;
+  }
+
+  .app-header__user-avatar {
+    right: 1rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    max-width: 2.25rem;
+    max-height: 2.25rem;
   }
   
   #active-sport-badge {

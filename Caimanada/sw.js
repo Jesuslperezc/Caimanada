@@ -1,4 +1,4 @@
-const CACHE_NAME = 'caimanada-cache-v9';
+const CACHE_NAME = 'caimanada-cache-v12';
 const urlsToCache = [
   './',
   './index.html',
