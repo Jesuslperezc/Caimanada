@@ -1258,7 +1258,7 @@
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
   padding: 0.125rem;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   animation: authRingPulse 3s ease-in-out infinite;

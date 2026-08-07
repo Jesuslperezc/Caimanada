@@ -474,35 +474,472 @@ caiman-toast.is-leaving {
   from { opacity: 1; transform: translateY(0) scale(1); }
   to { opacity: 0; transform: translateX(1.875rem) scale(0.95); }
 }
-
 /* ====================================================================
-   5. AVATAR DE USUARIO (INJECTADO POR JS)
+   PERFIL DE USUARIO - DISEÑO SUBLIME GLASS
+   (Bloque legado .profile-overlay / .profile-card: ya no lo usa
+   openProfileModal(), que ahora inserta .modal-overlay / .modal-card.
+   Se deja tal cual por si otra parte de la app aún lo referencia.)
    ==================================================================== */
-.app-header__user-avatar {
-  position: absolute;
-  right: 1.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2.625rem; /* 42px */
-  height: 2.625rem;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 0.125rem solid var(--accent-primary);
-  box-shadow: 0 0 0.625rem var(--accent-glow);
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  z-index: 10;
+
+/* --- OVERLAY DEL PERFIL --- */
+.profile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(0.5rem);
+  -webkit-backdrop-filter: blur(0.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: profileFadeIn 0.3s ease forwards;
 }
 
-.app-header__user-avatar:hover {
-  transform: translateY(-50%) scale(1.05);
-  box-shadow: 0 0 0.9375rem var(--accent-primary);
+@keyframes profileFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* --- TARJETA DEL PERFIL --- */
+.profile-card {
+  position: relative;
+  background: linear-gradient(160deg, rgba(6, 24, 14, 0.92) 0%, rgba(2, 15, 9, 0.98) 100%);
+  backdrop-filter: blur(1.25rem);
+  -webkit-backdrop-filter: blur(1.25rem);
+  border: 0.0625rem solid rgba(0, 255, 157, 0.12);
+  border-radius: 1.5rem;
+  padding: 2.5rem 2rem 2rem;
+  max-width: 28rem;
+  width: 100%;
+  box-shadow: 
+    0 2rem 4rem rgba(0, 0, 0, 0.6),
+    0 0 5rem rgba(0, 255, 157, 0.03);
+  animation: profileCardSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  transform: translateY(1rem);
+  opacity: 0;
+}
+
+@keyframes profileCardSlide {
+  from { transform: translateY(2rem); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Borde de brillo superior */
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: -0.0625rem;
+  left: 20%;
+  right: 20%;
+  height: 0.125rem;
+  background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+  border-radius: 0 0 50% 50%;
+  opacity: 0.4;
+}
+
+/* --- HEADER DEL PERFIL --- */
+.profile-card__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.profile-card__avatar-wrapper {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: rgba(0, 255, 157, 0.05);
+  border: 0.125rem solid rgba(0, 255, 157, 0.2);
+  box-shadow: 0 0 2rem rgba(0, 255, 157, 0.05);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.profile-card__avatar-wrapper:hover {
+  transform: scale(1.02);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 3rem rgba(0, 255, 157, 0.1);
+}
+
+/* Anillo neón alrededor del avatar */
+.profile-card__avatar-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: -0.25rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  padding: 0.125rem;
+  -mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.profile-card__avatar-wrapper:hover::before {
+  opacity: 0.8;
+}
+
+.profile-card__avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-card__avatar-placeholder {
+  font-size: 2.5rem;
+  color: var(--accent-primary);
+  opacity: 0.4;
+}
+
+.profile-card__title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.profile-card__subtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  opacity: 0.6;
+  letter-spacing: 0.03rem;
+}
+
+/* --- CUERPO DEL PERFIL --- */
+.profile-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Campo de formulario */
+.profile-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.profile-card__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06rem;
+  color: var(--text-muted);
+  padding-left: 0.25rem;
+}
+
+.profile-card__input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 0.0625rem solid rgba(0, 255, 157, 0.08);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: inset 0 0.125rem 0.5rem rgba(0, 0, 0, 0.2);
+}
+
+.profile-card__input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+
+.profile-card__input:focus {
+  border-color: var(--accent-primary);
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 
+    inset 0 0.125rem 0.5rem rgba(0, 0, 0, 0.3),
+    0 0 1.5rem rgba(0, 255, 157, 0.03);
+  transform: scale(1.01);
+}
+
+.profile-card__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- ESTADÍSTICAS DEL USUARIO (Opcional) --- */
+.profile-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0.75rem;
+  border: 0.0625rem solid rgba(0, 255, 157, 0.05);
+  margin-bottom: 0.5rem;
+}
+
+.profile-card__stat {
+  text-align: center;
+}
+
+.profile-card__stat-value {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--accent-primary);
+  display: block;
+}
+
+.profile-card__stat-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04rem;
+  color: var(--text-muted);
+}
+
+/* --- ACCIONES DEL PERFIL --- */
+.profile-card__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.profile-card__btn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06rem;
+  border-radius: 0.75rem;
+  border: 0.0625rem solid transparent;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-align: center;
+}
+
+.profile-card__btn--primary {
+  background: linear-gradient(135deg, var(--accent-primary), #00cc7d);
+  color: #000000;
+  box-shadow: 0 0.25rem 1rem rgba(0, 255, 157, 0.15);
+}
+
+.profile-card__btn--primary:hover {
+  transform: translateY(-0.125rem) scale(1.02);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 255, 157, 0.25);
+}
+
+.profile-card__btn--primary:active {
+  transform: scale(0.97);
+}
+
+.profile-card__btn--primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.profile-card__btn--secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.profile-card__btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.profile-card__btn--danger {
+  background: rgba(255, 51, 102, 0.08);
+  color: var(--danger);
+  border-color: rgba(255, 51, 102, 0.15);
+}
+
+.profile-card__btn--danger:hover {
+  background: rgba(255, 51, 102, 0.15);
+  border-color: rgba(255, 51, 102, 0.3);
+}
+
+/* --- FOOTER DEL PERFIL (Cerrar sesión) --- */
+.profile-card__footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 0.0625rem solid rgba(0, 255, 157, 0.05);
+  display: flex;
+  justify-content: center;
+}
+
+.profile-card__logout {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.profile-card__logout:hover {
+  color: var(--danger);
+  background: rgba(255, 51, 102, 0.05);
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 640px) {
+  .profile-overlay {
+    padding: 1rem;
+    align-items: flex-end;
+  }
+
+  .profile-card {
+    padding: 1.75rem 1.25rem 1.5rem;
+    border-radius: 1.25rem 1.25rem 0 0;
+    max-width: 100%;
+    animation: profileCardSlideMobile 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes profileCardSlideMobile {
+    from { transform: translateY(2rem); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .profile-card__avatar-wrapper {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  .profile-card__title {
+    font-size: 1.1rem;
+  }
+
+  .profile-card__stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+    padding: 0.5rem;
+  }
+
+  .profile-card__stat-value {
+    font-size: 0.95rem;
+  }
+
+  .profile-card__actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .profile-card__btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.7rem;
+  }
+
+  .profile-card__input {
+    padding: 0.65rem 0.875rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .profile-card {
+    padding: 1.5rem 1rem 1.25rem;
+  }
+
+  .profile-card__avatar-wrapper {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .profile-card__stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem;
+  }
+
+  .profile-card__stat-value {
+    font-size: 0.85rem;
+  }
+
+  .profile-card__stat-label {
+    font-size: 0.5rem;
+  }
+}
+
+/* --- ESTADO DE CARGA --- */
+.profile-card__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.profile-spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0.125rem solid rgba(0, 255, 157, 0.1);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: profileSpin 0.8s linear infinite;
+}
+
+@keyframes profileSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ====================================================================
+   FIX: DROPDOWN DE PERFIL ANCLADO BAJO EL AVATAR
+   openProfileModal() inserta <div id="dynamic-profile-modal" class="modal-overlay">
+   con <div class="modal-card"> adentro. Esas clases genéricas no tenían
+   position/anclaje propio, por eso el menú caía al final del documento
+   en vez de desplegarse debajo del avatar. Se scopea todo con el ID
+   para no tocar otros usos de .modal-overlay / .modal-card en la app
+   (por ejemplo el modal de partido/resumen).
+   ==================================================================== */
+#dynamic-profile-modal.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: transparent; /* no oscurece el resto de la app, es un dropdown */
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 5.5rem 1.5rem 0 0; /* debajo del header (5rem de alto) + margen */
+  pointer-events: none; /* deja pasar clicks al resto de la app */
+}
+
+#dynamic-profile-modal .modal-card {
+  pointer-events: auto;
+  width: 100%;
+  background: linear-gradient(160deg, rgba(6, 24, 14, 0.97) 0%, rgba(2, 15, 9, 0.99) 100%) !important;
+  backdrop-filter: blur(1rem);
+  -webkit-backdrop-filter: blur(1rem);
+  border: 0.0625rem solid rgba(0, 255, 157, 0.15) !important;
+  border-radius: 1rem;
+  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.6), 0 0 1.5rem rgba(0, 255, 157, 0.08);
+  animation: dropdownFadeIn 0.2s ease forwards;
 }
 
 @media (max-width: 48em) {
-  .app-header__user-avatar {
-    right: 0.75rem;
-    width: 2.125rem; /* 34px */
-    height: 2.125rem;
+  #dynamic-profile-modal.modal-overlay {
+    padding: 4.75rem 1rem 0 0; /* header móvil = 4.25rem de alto */
+    align-items: flex-end; /* variante hoja inferior en pantallas chicas */
+  }
+
+  #dynamic-profile-modal.modal-overlay {
+    justify-content: center;
   }
 }
