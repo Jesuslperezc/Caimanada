@@ -467,7 +467,7 @@ function openImportLeagueModal() {
         </p>
 
         <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <button id="btn-scan-league-qr" class="btn btn--primary" style="width: 100%;">📱 Escanear QR de Liga</button>
+          <button id="btn-scan-league-qr" class="btn btn--primary" style="width: 100%;">Escanear QR de Liga</button>
           
           <div style="text-align: center; color: #64748b; font-size: 0.8rem; margin: 0.5rem 0;">- O -</div>
 
@@ -619,7 +619,7 @@ async function openShareLeagueModal(leagueData, exportType) {
         <h2 class="modal-card__title">${titleText}</h2>
         <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">${subtitleText}</p>
         <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <button id="btn-show-qr" class="btn btn--primary" style="width: 100%;">📱 Generar Código QR</button>
+          <button id="btn-show-qr" class="btn btn--primary" style="width: 100%;">Generar Código QR</button>
           <div id="qr-display-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
             <img id="qr-image" src="" alt="Código QR" style="width: 100%; height: auto; max-width: 350px;" />
             <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para sincronizar</p>
