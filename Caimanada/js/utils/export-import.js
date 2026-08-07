@@ -24,7 +24,7 @@ export async function handleImportData(rawData) {
   const { type, payload } = parsed;
 
   switch (type) {
-       case 'LINK_LEAGUE': {
+     case 'LINK_LEAGUE': {
       if (!payload || !payload.leagueId || !payload.leagueName) throw new Error('Información de liga incompleta en el QR.');
       
       const now = new Date();
@@ -44,14 +44,19 @@ export async function handleImportData(rawData) {
         role: 'guest'
       };
 
-      await executeTransaction(['leagues', 'teams', 'matches'], 'readwrite', async (tx) => {
+      // TRANSACCIÓN ATÓMICA: Guardamos Liga, Equipos, Jugadores y Partidos al mismo tiempo
+      await executeTransaction(['leagues', 'teams', 'players', 'matches'], 'readwrite', async (tx) => {
         const leagueStore = tx.objectStore('leagues');
         leagueStore.put(newLeague);
 
+        const teamStore = tx.objectStore('teams');
+        const playerStore = tx.objectStore('players');
+
         if (payload.teams && payload.teams.length > 0) {
-          const teamStore = tx.objectStore('teams');
           payload.teams.forEach(t => {
-            if (!t.id) return; // PROTECCIÓN: Saltar si el equipo no trae ID
+            if (!t.id) return; // Protección
+            
+            // Guardamos el equipo
             teamStore.put({
               id: t.id,
               name: t.name,
@@ -61,13 +66,27 @@ export async function handleImportData(rawData) {
               color: t.color || '#3b82f6',
               createdAt: now.toISOString()
             });
+
+            // Si el equipo trae jugadores, los guardamos también
+            if (t.players && t.players.length > 0) {
+              t.players.forEach(p => {
+                if (!p.id) return; // Protección
+                playerStore.put({
+                  id: p.id,
+                  teamId: t.id, // Lo vinculamos al equipo que acaba de llegar
+                  name: p.name,
+                  number: p.number,
+                  position: p.position
+                });
+              });
+            }
           });
         }
 
+        const matchStore = tx.objectStore('matches');
         if (payload.matches && payload.matches.length > 0) {
-          const matchStore = tx.objectStore('matches');
           payload.matches.forEach(m => {
-            if (!m.id) return; // PROTECCIÓN: Saltar si el partido no trae ID
+            if (!m.id) return; // Protección
             matchStore.put({
               id: m.id,
               leagueId: newLeague.id,
@@ -88,10 +107,9 @@ export async function handleImportData(rawData) {
       return { 
         success: true, 
         league: newLeague, 
-        message: `Liga "${newLeague.name}" importada con fixture y equipos.` 
+        message: `Liga "${newLeague.name}" importada con fixture, equipos y plantillas.` 
       };
     }
-
     case 'IMPORT_TEAM': {
       if (!payload || !payload.name || !payload.leagueId) throw new Error('Información de equipo incompleta en el QR.');
       

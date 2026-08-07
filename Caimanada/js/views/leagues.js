@@ -6,7 +6,6 @@ import { getMatchesByLeague, bulkInsertFullMatches } from '../db/repositories/ma
 import { generateLeagueFixture, generateEliminationBracket } from '../utils/fixtureGenerator.js';
 import { renderLeagueStatsChart } from '../components/statsChart.js';
 import { startQRScanner, stopQRScanner, buildQRPayload } from '../utils/qr.js';
-// Añadido importLeagueFromJsonFile a la importación
 import { handleImportData, exportLeagueToJson, importLeagueFromJsonFile } from '../utils/export-import.js';
 import { AlertService } from '../components/alert.js'; 
 import { getMaxPlayersForSport } from '../utils/sport-terms.js';
@@ -105,7 +104,6 @@ export async function renderLeaguesView() {
       <div id="league-stats-container" style="margin-top: 2rem;"></div>
     `;
 
-    // Evento para el botón de importar liga
     document.getElementById('btn-import-league')?.addEventListener('click', () => {
       openImportLeagueModal();
     });
@@ -185,18 +183,19 @@ async function renderLeaguesCards(leagues, activeLeague) {
     const safeDescription = escapeHTML(league.description);
     const safeId = escapeHTML(league.id);
 
-    // LÓGICA DE ESTADOS DE LIGA Y REQUISITOS DE EXPORTACIÓN
-    let isComplete = true;
+    // Validamos que los equipos tengan al menos 1 jugador (capitán) para no exportar equipos vacíos
+    let hasPlayers = true;
     if (teams.length > 0) {
       for (const team of teams) {
         const players = await getPlayersByTeam(team.id);
-        if (players.length < getMaxPlayersForSport(league.sport)) { 
-          isComplete = false; break;
+        if (players.length === 0) { 
+          hasPlayers = false; break;
         }
       }
-    } else { isComplete = false; }
+    } else { hasPlayers = false; }
 
     const allMatchesPlayed = matches.length > 0 && matches.every(m => m.status === 'completed');
+    const hasStartedPlaying = matches.some(m => m.status === 'completed');
     const isGuest = league.role === 'guest';
     const isLigaMode = league.mode.includes('Liga');
     
@@ -208,24 +207,39 @@ async function renderLeaguesCards(leagues, activeLeague) {
     }
 
     const meetsTeamRequirements = isLigaMode ? (teams.length >= requiredTeams) : (teams.length === requiredTeams);
-    const canExport = meetsTeamRequirements && isComplete;
+    const canExport = meetsTeamRequirements && hasPlayers;
 
-    let actionButton = '';
+    let primaryActionBtn = '';
+    let secondaryActionBtn = '';
+
     if (isGuest) {
-      actionButton = `<button class="btn btn--primary btn--sm btn-guest-update" data-id="${safeId}">🔄 Actualizar</button>`;
+      primaryActionBtn = `<button class="btn btn--primary btn--sm btn-guest-update" data-id="${safeId}">🔄 Actualizar</button>`;
+      secondaryActionBtn = '<div></div>';
     } else {
-      if (allMatchesPlayed && matches.length > 0) {
-        actionButton = `<button class="btn btn--primary btn--sm btn-final-results" data-id="${safeId}">🏆 Finalizar</button>`;
-      } else if (matches.length > 0) {
-        actionButton = `<button class="btn btn--secondary btn--sm btn-export-update" data-id="${safeId}">📤 Sync</button>`;
+      if (allMatchesPlayed) {
+        primaryActionBtn = `<button class="btn btn--primary btn--sm btn-final-results" data-id="${safeId}">🏆 Finalizar</button>`;
+        secondaryActionBtn = '<div></div>';
       } else {
         if (canExport) {
-          actionButton = `<button class="btn btn--secondary btn--sm btn-export-league" data-id="${safeId}">📤 Exportar</button>`;
+          primaryActionBtn = `<button class="btn btn--secondary btn--sm btn-export-league" data-id="${safeId}">📤 Exportar</button>`;
         } else {
-          let reason = !meetsTeamRequirements ? `Faltan equipos (Req: ${requiredTeams})` : 'Faltan jugadores en plantillas';
-          actionButton = `<button class="btn btn--secondary btn--sm" disabled style="opacity: 0.5; cursor: not-allowed;" title="${reason}">🔒 Bloqueado</button>`;
+          let reason = !meetsTeamRequirements ? `Faltan equipos (Req: ${requiredTeams})` : 'Los equipos deben tener al menos 1 jugador (capitán)';
+          primaryActionBtn = `<button class="btn btn--secondary btn--sm" disabled style="opacity: 0.5; cursor: not-allowed;" title="${reason}">🔒 Bloqueado</button>`;
+        }
+        
+        if (hasStartedPlaying) {
+          secondaryActionBtn = `<button class="btn btn--secondary btn--sm btn-export-update" data-id="${safeId}">📤 Sync</button>`;
+        } else {
+          secondaryActionBtn = '<div></div>';
         }
       }
+    }
+    
+    let importTeamsBtn = '';
+    if (!isGuest && !allMatchesPlayed && matches.length === 0) {
+      importTeamsBtn = `<button class="btn btn--secondary btn--sm btn-import-teams" data-id="${safeId}">📷 Importar</button>`;
+    } else {
+      importTeamsBtn = '<div></div>';
     }
     
     return `
@@ -257,8 +271,9 @@ async function renderLeaguesCards(leagues, activeLeague) {
             ${!isGuest ? `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">✏️ Editar</button>` : '<div></div>'}
             ${!isGuest ? `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">⚡ Fixture</button>` : '<div></div>'}
             
-            ${!isGuest && !allMatchesPlayed ? `<button class="btn btn--secondary btn--sm btn-import-teams" data-id="${safeId}">📷 Importar</button>` : '<div></div>'}
-            ${actionButton}
+            ${importTeamsBtn}
+            ${primaryActionBtn}
+            ${secondaryActionBtn}
             
             <button class="btn btn--sm btn-danger btn-delete-league" data-id="${safeId}">🗑️ Borrar</button>
             ${isGuest ? '<div></div>' : ''} 
@@ -437,7 +452,6 @@ function showConfirmDialog(messageHTML, onConfirmCallback) {
   document.getElementById('dyn-confirm-accept').onclick = async () => { modalEl.remove(); if (onConfirmCallback) await onConfirmCallback(); };
 }
 
-// --- NUEVA FUNCIÓN PARA IMPORTAR LIGA (QR O JSON) ---
 function openImportLeagueModal() {
   document.getElementById('dynamic-import-league-modal')?.remove();
 
@@ -480,23 +494,17 @@ function openImportLeagueModal() {
     modalEl.remove();
   };
 
-    // 1. Escanear QR
   document.getElementById('btn-scan-league-qr').onclick = async () => {
     videoContainer.style.display = 'block';
     await startQRScanner(videoEl, async (rawData) => {
       try {
         const result = await handleImportData(rawData);
         if (result.success) {
-          
-          // --- LA MAGIA ESTÁ AQUÍ ---
-          // Si se importó una liga, cambiamos el deporte activo para que sea visible
           if (result.league && result.league.sport) {
             localStorage.setItem('active_sport_id', result.league.sport);
             const sportSelect = document.getElementById('active-sport-selector');
             if (sportSelect) sportSelect.value = result.league.sport;
           }
-          // ---------------------------
-
           AlertService.showChampion(result.message || '¡Liga importada/actualizada!', '¡SINCRONIZADO!');
           stopQRScanner();
           modalEl.remove();
@@ -511,7 +519,7 @@ function openImportLeagueModal() {
       AlertService.showError('No se pudo acceder a la cámara. Usa Subir JSON en su lugar.', 'ERROR DE CÁMARA');
     });
   };
-  // 2. Subir JSON
+
   document.getElementById('btn-upload-league-json').onclick = () => fileInput.click();
 
   fileInput.onchange = async (e) => {
@@ -631,30 +639,49 @@ async function openShareLeagueModal(leagueData, exportType) {
       sport: leagueData.sport,
       mode: leagueData.mode
     };
-      if (exportType === 'initial') {
-        const teams = await getTeamsByLeague(leagueData.id);
-        payload.teams = teams.map(t => ({ id: t.id, name: t.name, sportId: t.sportId, delegate: t.delegate }));
-        
-        payload.matches = matches.map(m => ({ 
-          id: m.id, 
-          status: m.status, 
-          scoreHome: m.scoreHome, 
-          scoreAway: m.scoreAway, 
-          homeTeamId: m.homeTeamId, 
-          awayTeamId: m.awayTeamId, 
-          date: m.date, 
-          round: m.round || 1,
-          slot: m.slot || null,                       
-          winnerGoesToMatchId: m.winnerGoesToMatchId  
-        }));
-      } else {
-        // En las actualizaciones, solo enviamos los marcadores (esto está perfecto)
-        payload.matches = matches.map(m => ({ id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway }));
-      }
-      const qrPayload = buildQRPayload(exportType === 'update' ? 'LEAGUE_UPDATE' : 'LINK_LEAGUE', payload);
-      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
-      document.getElementById('qr-image').src = qrApiUrl;
-      document.getElementById('qr-display-container').style.display = 'flex';
+
+    if (exportType === 'initial') {
+      const teams = await getTeamsByLeague(leagueData.id);
+      
+      const teamsWithPlayers = await Promise.all(teams.map(async (t) => {
+        const players = await getPlayersByTeam(t.id);
+        return {
+          id: t.id,
+          name: t.name,
+          sportId: t.sportId,
+          delegate: t.delegate,
+          color: t.color,
+          players: players.map(p => ({
+            id: p.id,
+            name: p.name,
+            number: p.number,
+            position: p.position
+          }))
+        };
+      }));
+
+      payload.teams = teamsWithPlayers;
+      
+      payload.matches = matches.map(m => ({ 
+        id: m.id, 
+        status: m.status, 
+        scoreHome: m.scoreHome, 
+        scoreAway: m.scoreAway, 
+        homeTeamId: m.homeTeamId, 
+        awayTeamId: m.awayTeamId, 
+        date: m.date, 
+        round: m.round || 1,
+        slot: m.slot || null,                       
+        winnerGoesToMatchId: m.winnerGoesToMatchId  
+      }));
+    } else {
+      payload.matches = matches.map(m => ({ id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway }));
+    }
+
+    const qrPayload = buildQRPayload(exportType === 'update' ? 'LEAGUE_UPDATE' : 'LINK_LEAGUE', payload);
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
+    document.getElementById('qr-image').src = qrApiUrl;
+    document.getElementById('qr-display-container').style.display = 'flex';
   };
 }
 
