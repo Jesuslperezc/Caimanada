@@ -104,3 +104,29 @@ body {
 .btn--primary:active {
   transform: translateY(0);
 }
+
+#app-watermark-footer {
+  position: fixed;
+  bottom: 5px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 0.7rem;
+  color: #64748b;
+  opacity: 0.4;
+  pointer-events: none; /* No estorba los clics */
+  z-index: 5; /* Queda por debajo de modales y navs */
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  user-select: none; /* No se puede seleccionar el texto */
+}
+
+/* En móvil, lo subimos un poco más para que no choque con la barra de navegación inferior */
+@media (max-width: 768px) {
+  #app-watermark-footer {
+    bottom: 90px; /* Subimos de 70px a 90px para darle más espacio */
+    font-size: 0.65rem;
+    opacity: 0.3;
+    padding: 0 1rem; /* Para que el texto no toque los bordes laterales */
+  }
+}

@@ -1,6 +1,8 @@
 import { renderLeaguesView } from '../views/leagues.js';
 import { renderTeamsView } from '../views/teams.js';
 import { renderMatchesView } from '../views/matches.js';
+import { renderDashboardView } from '../views/dashboard.js'; 
+
 
 // Función auxiliar para bloquear el selector de deporte en la vista de partidos
 function updateSportSelectorLock(isMatchesView) {
@@ -57,6 +59,8 @@ export function handleRoute() {
     renderTeamsView().catch(err => console.error('Error renderizando equipos:', err));
   } else if (cleanName === 'matches') { 
     renderMatchesView().catch(err => console.error('Error renderizando partidos:', err));
+  } else if (cleanName === 'dashboard') { // <--- NUEVA CONDICIÓN
+    renderDashboardView().catch(err => console.error('Error renderizando dashboard:', err));
   }
 }
 

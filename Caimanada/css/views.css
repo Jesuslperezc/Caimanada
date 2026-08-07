@@ -192,24 +192,145 @@
   position: absolute;
   border: 10px solid transparent;
 }
+/* === DASHBOARD MEJORADO (RESPONSIVO) === */
 
-/* Pantalla Inicial */
+/* Cabecera del Dashboard */
+.dashboard-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard-titles {
+  flex: 1 1 100%; /* Ocupa todo el ancho en móvil */
+}
+
+@media (min-width: 768px) {
+  .dashboard-titles {
+    flex: 1 1 auto; /* Comparte espacio en escritorio */
+  }
+}
+
+/* Estado P2P */
+.p2p-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255,255,255,0.05);
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-card, #334155);
+  width: 100%; /* Ancho completo en móvil */
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .p2p-card {
+    width: auto; /* Tamaño natural en escritorio */
+    justify-content: flex-start;
+  }
+}
+
+.p2p-icon { font-size: 1.5rem; line-height: 1; }
+.p2p-title { font-size: 0.75rem; color: #94a3b8; margin: 0; font-weight: 600; text-transform: uppercase; }
+.p2p-text { font-size: 0.9rem; font-weight: bold; margin: 0; color: #10b981; }
+
+/* Cuadrícula Principal Mobile First */
 .dashboard-view__grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
+  grid-template-columns: 1fr; /* 1 columna por defecto en móvil */
+  gap: 1.5rem;
 }
 
 @media (min-width: 640px) {
   .dashboard-view__grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr); /* 2 columnas en tablet */
   }
 }
 
 @media (min-width: 1024px) {
   .dashboard-view__grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr); /* 3 columnas en escritorio */
   }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-view__grid {
+    grid-template-columns: repeat(4, 1fr); /* 4 columnas en pantallas grandes */
+  }
+}
+
+/* Termómetro */
+.momentum-grid {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+.momentum-item { flex: 1; min-width: 0; }
+.momentum-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+.momentum-name { 
+  font-size: 1rem !important; 
+  margin: 0.5rem 0 !important; 
+  color: #e2e8f0; 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; /* Evita que nombres largos rompan el diseño */
+}
+.momentum-stats { margin: 0 !important; font-size: 0.8rem; color: #94a3b8; }
+.momentum-divider { width: 1px; height: 60px; background: var(--border-card, #334155); flex-shrink: 0; }
+
+/* MVP Card */
+.mvp-card {
+  background: linear-gradient(135deg, #1e293b 0%, rgba(0, 168, 107, 0.15) 100%);
+  border: 1px solid var(--accent-primary, #00A86B);
+}
+.mvp-label { color: var(--accent-primary, #00A86B) !important; }
+.mvp-name { font-size: 1.4rem !important; color: #fff !important; margin-bottom: 0.5rem !important; }
+.mvp-stats { color: #cbd5e1 !important; }
+
+/* Bracket Path (Ocupa todas las columnas disponibles) */
+.bracket-card { 
+  grid-column: 1 / -1; 
+}
+.bracket-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap; /* Permite que se apile en móvil si es necesario */
+}
+.bracket-match {
+  text-align: center;
+  padding: 1rem 1.5rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  min-width: 140px;
+  border: 1px solid var(--border-card, #334155);
+  flex: 1;
+  max-width: 200px;
+}
+.bracket-arrow { font-size: 2rem; color: var(--accent-primary, #00A86B); }
+.bracket-winner {
+  text-align: center;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 168, 107, 0.1);
+  border: 2px solid var(--accent-primary, #00A86B);
+  border-radius: 10px;
+  min-width: 140px;
+  flex: 1;
+  max-width: 200px;
+}
+.bracket-winner p { color: #fff !important; }
+
+/* Contenedor de Gráfica (Siempre ocupa todo el ancho) */
+.dashboard-chart-container {
+  grid-column: 1 / -1;
+  margin-top: 1.5rem;
 }
 
 /* Tarjeta destacada sin liga */

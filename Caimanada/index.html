@@ -58,6 +58,8 @@
   <main class="app-content" id="app-router-view">
 
     <!-- Vista: Dashboard -->
+        <!-- Vista: Dashboard -->
+       <!-- Vista: Dashboard -->
     <section class="view-section dashboard-view" id="dashboard-section" aria-labelledby="active-league-title">
       <header class="view-section__header" id="dashboard-header">
         
@@ -70,45 +72,110 @@
           </a>
         </div>
 
-      </header>
-
-      <div class="dashboard-view__grid">
-        <article class="info-card" id="card-next-match">
-          <header class="info-card__header">
-            <h2 class="info-card__label">Próximo Partido</h2>
-          </header>
-          <div class="info-card__body">
-            <div class="match-summary">
-              <span class="match-summary__team" id="next-match-home">Sin información</span>
-              <span class="match-summary__vs">VS</span>
-              <span class="match-summary__team" id="next-match-away">Sin información</span>
+        <!-- Estado de Liga Activa -->
+        <div id="active-league-info" style="display: none; width: 100%;">
+          
+          <div class="dashboard-header-row">
+            <div class="dashboard-titles">
+              <h1 class="view-section__title" id="dash-league-name" style="margin-bottom: 0.25rem;"></h1>
+              <p class="view-section__subtitle" id="dash-league-mode" style="margin: 0;"></p>
             </div>
-            <time class="info-card__footer-text" datetime="2026-07-25T20:00" id="next-match-time">Fecha-Hora</time>
+            
+            <!-- Idea 1: Estado P2P -->
+            <div class="p2p-card" id="p2p-status-card">
+              <span id="p2p-icon" class="p2p-icon">⚪</span>
+              <div>
+                <p id="p2p-title" class="p2p-title">Estado</p>
+                <p id="p2p-text" class="p2p-text">Sincronizado</p>
+              </div>
+            </div>
           </div>
-        </article>
 
-        <article class="info-card" id="card-table-leader">
-          <header class="info-card__header">
-            <h2 class="info-card__label">Líder de la Tabla</h2>
-          </header>
-          <div class="info-card__body">
-            <p class="info-card__highlight" id="leader-team-name"></p>
-            <p class="info-card__subtext" id="leader-team-stats"></p>
-          </div>
-        </article>
+          <div class="dashboard-view__grid">
+            <!-- Próximo Partido (Contextualizado) -->
+            <article class="info-card" id="card-next-match">
+              <header class="info-card__header">
+                <h2 class="info-card__label" id="next-match-label">Próximo Enfrentamiento</h2>
+              </header>
+              <div class="info-card__body">
+                <div class="match-summary">
+                  <span class="match-summary__team" id="next-match-home">Sin información</span>
+                  <span class="match-summary__vs">VS</span>
+                  <span class="match-summary__team" id="next-match-away">Sin información</span>
+                </div>
+                <time class="info-card__footer-text" datetime="" id="next-match-time">Fecha-Hora</time>
+              </div>
+            </article>
 
-        <article class="info-card" id="card-sports-info">
-          <header class="info-card__header">
-            <h2 class="info-card__label">Deportes Compatibles</h2>
-          </header>
-          <div class="info-card__body">
-            <p class="info-card__highlight">Fútbol, Ping-Pong, Ajedrez</p>
-            <p class="info-card__subtext">Adaptación automática de reglamentos y métricas</p>
+            <!-- Líder (Contextualizado) -->
+            <article class="info-card" id="card-table-leader">
+              <header class="info-card__header">
+                <h2 class="info-card__label" id="leader-label">Líder de la Tabla</h2>
+              </header>
+              <div class="info-card__body">
+                <p class="info-card__highlight" id="leader-team-name"></p>
+                <p class="info-card__subtext" id="leader-team-stats"></p>
+              </div>
+            </article>
+
+            <!-- Idea 2: Termómetro de Rachas -->
+            <article class="info-card" id="card-momentum">
+              <header class="info-card__header">
+                <h2 class="info-card__label">Caiman-mómetro </h2>
+              </header>
+              <div class="info-card__body momentum-grid">
+                <div class="momentum-item">
+                  <span class="momentum-icon">🔥</span>
+                  <p class="info-card__highlight momentum-name" id="hot-team-name">-</p>
+                  <p class="info-card__subtext momentum-stats" id="hot-team-stats">En racha</p>
+                </div>
+                <div class="momentum-divider"></div>
+                <div class="momentum-item">
+                  <span class="momentum-icon">🥶</span>
+                  <p class="info-card__highlight momentum-name" id="cold-team-name">-</p>
+                  <p class="info-card__subtext momentum-stats" id="cold-team-stats">En crisis</p>
+                </div>
+              </div>
+            </article>
+
+            <!-- Idea 4: MVP de la Jornada -->
+            <article class="info-card mvp-card" id="card-mvp">
+              <header class="info-card__header">
+                <h2 class="info-card__label mvp-label" id="mvp-title-label">El Rey de la Caimana </h2>
+              </header>
+              <div class="info-card__body">
+                <p class="info-card__highlight mvp-name" id="mvp-player-name">Sin datos aún</p>
+                <p class="info-card__subtext mvp-stats" id="mvp-player-stats">Juega la primera jornada para revelar al MVP</p>
+              </div>
+            </article>
+
+            <!-- Idea 5: Ruta al Título (Solo visible si es Eliminación Directa) -->
+            <article class="info-card bracket-card" id="card-bracket-path">
+              <header class="info-card__header">
+                <h2 class="info-card__label">🏆 Ruta al Título</h2>
+              </header>
+              <div class="info-card__body bracket-container" id="bracket-path-container">
+                <!-- El bracket se inyecta aquí -->
+              </div>
+            </article>
           </div>
-        </article>
-      </div>
+
+          <!-- Gráfica Restaurada -->
+          <div class="dashboard-chart-container" id="dashboard-stats-container" style="margin-top: 2rem;">
+            <article class="info-card">
+              <header class="info-card__header">
+                <h3 class="info-card__label">Estadísticas de la Liga</h3>
+              </header>
+              <div class="chart-wrapper" style="position: relative; height: 350px; width: 100%; padding: 1rem;">
+                <canvas id="canvas-dashboard-stats"></canvas>
+              </div>
+            </article>
+          </div>
+
+        </div>
+
+      </header>
     </section>
-
 
     <!-- Vista: Ligas -->
     <section class="view-section leagues-view is-hidden" id="leagues-section" aria-labelledby="leagues-title">
