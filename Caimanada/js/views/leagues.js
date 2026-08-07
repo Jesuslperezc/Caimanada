@@ -6,7 +6,6 @@ import { getMatchesByLeague, bulkInsertFullMatches } from '../db/repositories/ma
 import { generateLeagueFixture, generateEliminationBracket } from '../utils/fixtureGenerator.js';
 import { renderLeagueStatsChart } from '../components/statsChart.js';
 import { startQRScanner, stopQRScanner, buildQRPayload } from '../utils/qr.js';
-// Añadido importLeagueFromJsonFile a la importación
 import { handleImportData, exportLeagueToJson, importLeagueFromJsonFile } from '../utils/export-import.js';
 import { AlertService } from '../components/alert.js'; 
 import { getMaxPlayersForSport } from '../utils/sport-terms.js';
@@ -105,7 +104,6 @@ export async function renderLeaguesView() {
       <div id="league-stats-container" style="margin-top: 2rem;"></div>
     `;
 
-    // Evento para el botón de importar liga
     document.getElementById('btn-import-league')?.addEventListener('click', () => {
       openImportLeagueModal();
     });
@@ -185,18 +183,19 @@ async function renderLeaguesCards(leagues, activeLeague) {
     const safeDescription = escapeHTML(league.description);
     const safeId = escapeHTML(league.id);
 
-    // LÓGICA DE ESTADOS DE LIGA Y REQUISITOS DE EXPORTACIÓN
-    let isComplete = true;
+    // Validamos que los equipos tengan al menos 1 jugador (capitán) para no exportar equipos vacíos
+    let hasPlayers = true;
     if (teams.length > 0) {
       for (const team of teams) {
         const players = await getPlayersByTeam(team.id);
-        if (players.length < getMaxPlayersForSport(league.sport)) { 
-          isComplete = false; break;
+        if (players.length === 0) { 
+          hasPlayers = false; break;
         }
       }
-    } else { isComplete = false; }
+    } else { hasPlayers = false; }
 
     const allMatchesPlayed = matches.length > 0 && matches.every(m => m.status === 'completed');
+    const hasStartedPlaying = matches.some(m => m.status === 'completed');
     const isGuest = league.role === 'guest';
     const isLigaMode = league.mode.includes('Liga');
     
@@ -208,24 +207,42 @@ async function renderLeaguesCards(leagues, activeLeague) {
     }
 
     const meetsTeamRequirements = isLigaMode ? (teams.length >= requiredTeams) : (teams.length === requiredTeams);
-    const canExport = meetsTeamRequirements && isComplete;
+    const canExport = meetsTeamRequirements && hasPlayers;
 
-    let actionButton = '';
+    let primaryActionBtn = '';
+    let secondaryActionBtn = '';
+
     if (isGuest) {
-      actionButton = `<button class="btn btn--primary btn--sm btn-guest-update" data-id="${safeId}">🔄 Actualizar</button>`;
+      primaryActionBtn = `<button class="btn btn--primary btn--sm btn-guest-update" data-id="${safeId}">🔄 Actualizar</button>`;
+      secondaryActionBtn = '<div></div>';
     } else {
-      if (allMatchesPlayed && matches.length > 0) {
-        actionButton = `<button class="btn btn--primary btn--sm btn-final-results" data-id="${safeId}">🏆 Finalizar</button>`;
-      } else if (matches.length > 0) {
-        actionButton = `<button class="btn btn--secondary btn--sm btn-export-update" data-id="${safeId}">📤 Sync</button>`;
+      if (league.isFinished) {
+        primaryActionBtn = '<span style="color: #f59e0b; font-weight: bold; text-align: center; padding: 0.4rem;">🏁 FINALIZADA</span>';
+        secondaryActionBtn = '<div></div>';
+      } else if (allMatchesPlayed) {
+        primaryActionBtn = `<button class="btn btn--primary btn--sm btn-final-results" data-id="${safeId}">🏆 Finalizar</button>`;
+        secondaryActionBtn = '<div></div>';
       } else {
         if (canExport) {
-          actionButton = `<button class="btn btn--secondary btn--sm btn-export-league" data-id="${safeId}">📤 Exportar</button>`;
+          primaryActionBtn = `<button class="btn btn--secondary btn--sm btn-export-league" data-id="${safeId}">📤 Exportar</button>`;
         } else {
-          let reason = !meetsTeamRequirements ? `Faltan equipos (Req: ${requiredTeams})` : 'Faltan jugadores en plantillas';
-          actionButton = `<button class="btn btn--secondary btn--sm" disabled style="opacity: 0.5; cursor: not-allowed;" title="${reason}">🔒 Bloqueado</button>`;
+          let reason = !meetsTeamRequirements ? `Faltan equipos (Req: ${requiredTeams})` : 'Los equipos deben tener al menos 1 jugador (capitán)';
+          primaryActionBtn = `<button class="btn btn--secondary btn--sm" disabled style="opacity: 0.5; cursor: not-allowed;" title="${reason}">🔒 Bloqueado</button>`;
+        }
+        
+        if (hasStartedPlaying) {
+          secondaryActionBtn = `<button class="btn btn--secondary btn--sm btn-export-update" data-id="${safeId}">📤 Sync</button>`;
+        } else {
+          secondaryActionBtn = '<div></div>';
         }
       }
+    }
+    
+    let importTeamsBtn = '';
+    if (!isGuest && !allMatchesPlayed && matches.length === 0) {
+      importTeamsBtn = `<button class="btn btn--secondary btn--sm btn-import-teams" data-id="${safeId}">📷 Importar</button>`;
+    } else {
+      importTeamsBtn = '<div></div>';
     }
     
     return `
@@ -257,8 +274,9 @@ async function renderLeaguesCards(leagues, activeLeague) {
             ${!isGuest ? `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">✏️ Editar</button>` : '<div></div>'}
             ${!isGuest ? `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">⚡ Partidos</button>` : '<div></div>'}
             
-            ${!isGuest && !allMatchesPlayed ? `<button class="btn btn--secondary btn--sm btn-import-teams" data-id="${safeId}">📷 Importar</button>` : '<div></div>'}
-            ${actionButton}
+            ${importTeamsBtn}
+            ${primaryActionBtn}
+            ${secondaryActionBtn}
             
             <button class="btn btn--sm btn-danger btn-delete-league" data-id="${safeId}">🗑️ Borrar</button>
             ${isGuest ? '<div></div>' : ''} 
@@ -437,7 +455,6 @@ function showConfirmDialog(messageHTML, onConfirmCallback) {
   document.getElementById('dyn-confirm-accept').onclick = async () => { modalEl.remove(); if (onConfirmCallback) await onConfirmCallback(); };
 }
 
-// --- NUEVA FUNCIÓN PARA IMPORTAR LIGA (QR O JSON) ---
 function openImportLeagueModal() {
   document.getElementById('dynamic-import-league-modal')?.remove();
 
@@ -480,23 +497,17 @@ function openImportLeagueModal() {
     modalEl.remove();
   };
 
-    // 1. Escanear QR
   document.getElementById('btn-scan-league-qr').onclick = async () => {
     videoContainer.style.display = 'block';
     await startQRScanner(videoEl, async (rawData) => {
       try {
         const result = await handleImportData(rawData);
         if (result.success) {
-          
-          // --- LA MAGIA ESTÁ AQUÍ ---
-          // Si se importó una liga, cambiamos el deporte activo para que sea visible
           if (result.league && result.league.sport) {
             localStorage.setItem('active_sport_id', result.league.sport);
             const sportSelect = document.getElementById('active-sport-selector');
             if (sportSelect) sportSelect.value = result.league.sport;
           }
-          // ---------------------------
-
           AlertService.showChampion(result.message || '¡Liga importada/actualizada!', '¡SINCRONIZADO!');
           stopQRScanner();
           modalEl.remove();
@@ -511,7 +522,7 @@ function openImportLeagueModal() {
       AlertService.showError('No se pudo acceder a la cámara. Usa Subir JSON en su lugar.', 'ERROR DE CÁMARA');
     });
   };
-  // 2. Subir JSON
+
   document.getElementById('btn-upload-league-json').onclick = () => fileInput.click();
 
   fileInput.onchange = async (e) => {
@@ -610,7 +621,7 @@ async function openShareLeagueModal(leagueData, exportType) {
         <div style="display: flex; flex-direction: column; gap: 1rem;">
           <button id="btn-show-qr" class="btn btn--primary" style="width: 100%;">📱 Generar Código QR</button>
           <div id="qr-display-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
-            <img id="qr-image" src="" alt="Código QR" style="width: 220px; height: 220px;" />
+            <img id="qr-image" src="" alt="Código QR" style="width: 100%; height: auto; max-width: 350px;" />
             <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para sincronizar</p>
           </div>
         </div>
@@ -631,74 +642,109 @@ async function openShareLeagueModal(leagueData, exportType) {
       sport: leagueData.sport,
       mode: leagueData.mode
     };
-      if (exportType === 'initial') {
-        const teams = await getTeamsByLeague(leagueData.id);
-        payload.teams = teams.map(t => ({ id: t.id, name: t.name, sportId: t.sportId, delegate: t.delegate }));
-        
-        payload.matches = matches.map(m => ({ 
-          id: m.id, 
-          status: m.status, 
-          scoreHome: m.scoreHome, 
-          scoreAway: m.scoreAway, 
-          homeTeamId: m.homeTeamId, 
-          awayTeamId: m.awayTeamId, 
-          date: m.date, 
-          round: m.round || 1,
-          slot: m.slot || null,                       
-          winnerGoesToMatchId: m.winnerGoesToMatchId  
-        }));
-      } else {
-        // En las actualizaciones, solo enviamos los marcadores (esto está perfecto)
-        payload.matches = matches.map(m => ({ id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway }));
-      }
-      const qrPayload = buildQRPayload(exportType === 'update' ? 'LEAGUE_UPDATE' : 'LINK_LEAGUE', payload);
-      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
-      document.getElementById('qr-image').src = qrApiUrl;
-      document.getElementById('qr-display-container').style.display = 'flex';
+
+    if (exportType === 'initial') {
+      const teams = await getTeamsByLeague(leagueData.id);
+      
+      const teamsWithPlayers = await Promise.all(teams.map(async (t) => {
+        const players = await getPlayersByTeam(t.id);
+        return {
+          id: t.id,
+          name: t.name,
+          sportId: t.sportId,
+          delegate: t.delegate,
+          color: t.color,
+          players: players.map(p => ({
+            id: p.id,
+            name: p.name,
+            number: p.number,
+            position: p.position
+          }))
+        };
+      }));
+
+      payload.teams = teamsWithPlayers;
+      
+      // Payload de partidos ligero (SIN EVENTOS en el inicial para no saturar el QR)
+      payload.matches = matches.map(m => ({ 
+        id: m.id, 
+        status: m.status, 
+        scoreHome: m.scoreHome, 
+        scoreAway: m.scoreAway, 
+        homeTeamId: m.homeTeamId, 
+        awayTeamId: m.awayTeamId, 
+        date: m.date, 
+        round: m.round || 1,
+        slot: m.slot || null,                       
+        winnerGoesToMatchId: m.winnerGoesToMatchId  
+      }));
+    } else {
+      // EN LAS ACTUALIZACIONES (SYNC), SÍ MANDAMOS LOS EVENTOS
+      payload.matches = await Promise.all(matches.map(async (m) => {
+        const events = m.status === 'completed' ? await MatchEventRepository.getEventsByMatch(m.id) : [];
+        return { id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway, events: events || [] };
+      }));
+    }
+
+    const qrPayload = buildQRPayload(exportType === 'update' ? 'LEAGUE_UPDATE' : 'LINK_LEAGUE', payload);
+    // AUMENTAMOS EL TAMAÑO A 500x500 PARA MEJORAR LA LECTURA
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qrPayload)}`;
+    document.getElementById('qr-image').src = qrApiUrl;
+    document.getElementById('qr-display-container').style.display = 'flex';
   };
 }
 
 async function openFinalResultsModal(leagueData) {
-  document.getElementById('dynamic-final-modal')?.remove();
+  document.getElementById('dynamic-share-modal')?.remove();
   const modalHTML = `
-    <div id="dynamic-final-modal" class="modal-overlay">
+    <div id="dynamic-share-modal" class="modal-overlay">
       <div class="modal-card" style="max-width: 420px;">
-        <h2 class="modal-card__title">Resultados Finales</h2>
-        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">Sube la foto de los campeones. Los invitados podrán descargarla escaneando el QR.</p>
-        <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="form-group__label">Foto de la CaimanaDa</label>
-          <input type="file" id="final-photo-input" accept="image/*" class="form-control" />
-        </div>
-        <div id="qr-final-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
-          <img id="qr-final-image" src="" alt="Código QR Final" style="width: 220px; height: 220px;" />
+        <h2 class="modal-card__title">Última Sincronización</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">Genera este QR para que los invitados actualicen los resultados y estadísticas finales de la liga.</p>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <button id="btn-show-qr" class="btn btn--primary" style="width: 100%;">📱 Generar Código QR Final</button>
+          <div id="qr-display-container" style="display: none; flex-direction: column; align-items: center; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
+            <img id="qr-image" src="" alt="Código QR" style="width: 100%; height: auto; max-width: 350px;" />
+            <p style="font-size: 0.75rem; color: #0f172a; margin-top: 0.5rem; font-weight: bold;">Escanea para sincronizar</p>
+          </div>
         </div>
         <div class="modal-actions" style="margin-top: 2rem; text-align: right;">
-          <button type="button" id="dyn-final-cancel" class="btn btn--secondary">Cerrar</button>
+          <button type="button" id="dyn-share-cancel" class="btn btn--secondary">Cerrar</button>
         </div>
       </div>
     </div>`;
   document.body.insertAdjacentHTML('beforeend', modalHTML);
-  const modalEl = document.getElementById('dynamic-final-modal');
-  document.getElementById('dyn-final-cancel').onclick = () => modalEl.remove();
+  const modalEl = document.getElementById('dynamic-share-modal');
+  
+  // Al cerrar, recargamos la vista para que la tarjeta muestre "FINALIZADA"
+  document.getElementById('dyn-share-cancel').onclick = async () => {
+    modalEl.remove();
+    await renderLeaguesView(); 
+  };
 
-  document.getElementById('final-photo-input').onchange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        const photoBase64 = ev.target.result;
-        await updateLeague({ ...leagueData, finalPhoto: photoBase64, isFinished: true });
-        
-        const qrPayload = buildQRPayload('FINAL_RESULTS', {
-          leagueId: leagueData.id,
-          photo: photoBase64
-        });
-        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
-        document.getElementById('qr-final-image').src = qrApiUrl;
-        document.getElementById('qr-final-container').style.display = 'flex';
-        AlertService.showSuccess('Resultados finales guardados. Muestra el QR a los invitados.');
-      };
-      reader.readAsDataURL(file);
+  document.getElementById('btn-show-qr').onclick = async () => {
+    const matches = await getMatchesByLeague(leagueData.id);
+    let payload = {
+      leagueId: leagueData.id,
+      leagueName: leagueData.name,
+      sport: leagueData.sport,
+      mode: leagueData.mode
+    };
+
+    // MANDAMOS TODOS LOS PARTIDOS CON SUS EVENTOS PARA EL ÚLTIMO SYNC
+    payload.matches = await Promise.all(matches.map(async (m) => {
+      const events = m.status === 'completed' ? await MatchEventRepository.getEventsByMatch(m.id) : [];
+      return { id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway, events: events || [] };
+    }));
+
+    const qrPayload = buildQRPayload('LEAGUE_UPDATE', payload); // Usamos LEAGUE_UPDATE
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qrPayload)}`;
+    document.getElementById('qr-image').src = qrApiUrl;
+    document.getElementById('qr-display-container').style.display = 'flex';
+    
+    // Marcamos la liga como finalizada en la base de datos local
+    if (!leagueData.isFinished) {
+      await updateLeague({ ...leagueData, isFinished: true });
     }
   };
 }

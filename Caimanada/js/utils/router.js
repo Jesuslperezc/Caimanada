@@ -2,6 +2,24 @@ import { renderLeaguesView } from '../views/leagues.js';
 import { renderTeamsView } from '../views/teams.js';
 import { renderMatchesView } from '../views/matches.js';
 
+// Función auxiliar para bloquear el selector de deporte en la vista de partidos
+function updateSportSelectorLock(isMatchesView) {
+  const selector = document.getElementById('active-sport-selector');
+  if (!selector) return;
+
+  if (isMatchesView) {
+    selector.disabled = true;
+    selector.style.opacity = '0.6';
+    selector.style.cursor = 'not-allowed';
+    selector.title = 'El deporte está bloqueado mientras ves los Partidos de la liga activa.';
+  } else {
+    selector.disabled = false;
+    selector.style.opacity = '1';
+    selector.style.cursor = 'pointer';
+    selector.title = 'Seleccionar deporte';
+  }
+}
+
 export function handleRoute() {
   const rawHash = window.location.hash.trim();
   const currentHash = (rawHash && rawHash !== '#') ? rawHash : '#dashboard';
@@ -9,6 +27,10 @@ export function handleRoute() {
   const baseHash = currentHash.split('/')[0];
   const cleanName = baseHash.replace('#', '');
   const targetSectionId = `${cleanName}-section`;
+
+  // --- LÓGICA DE BLOQUEO DEL SELECTOR ---
+  updateSportSelectorLock(cleanName === 'matches');
+  // ----------------------------------------
 
   const sections = document.querySelectorAll('.view-section');
   let found = false;
