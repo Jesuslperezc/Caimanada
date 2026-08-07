@@ -339,6 +339,10 @@ function openRosterModal(teamId, teamName, onCloseCallback) {
 async function openShareTeamModal(teamData) {
   document.getElementById('dynamic-share-team-modal')?.remove();
   const activeSportId = getActiveSport();
+  
+  // OBTENEMOS LOS JUGADORES DEL EQUIPO LOCAL
+  const players = await getPlayersByTeam(teamData.id);
+
   const modalHTML = `
     <div id="dynamic-share-team-modal" class="modal-overlay">
       <div class="modal-card" style="max-width: 420px;">
@@ -348,7 +352,7 @@ async function openShareTeamModal(teamData) {
           <div id="qr-team-display" style="padding: 1rem; background: #fff; border-radius: 8px;">
             <img id="qr-team-image" src="" alt="Código QR de Equipo" style="width: 220px; height: 220px;" />
           </div>
-          <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem; font-weight: bold;">Equipo: ${escapeHTML(teamData.name)}</p>
+          <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem; font-weight: bold;">Equipo: ${escapeHTML(teamData.name)} (${players.length} jugadores)</p>
         </div>
         <div class="modal-actions" style="margin-top: 2rem; text-align: right;">
           <button type="button" id="dyn-share-team-cancel" class="btn btn--secondary">Cerrar</button>
@@ -359,13 +363,20 @@ async function openShareTeamModal(teamData) {
   const modalEl = document.getElementById('dynamic-share-team-modal');
   document.getElementById('dyn-share-team-cancel').onclick = () => modalEl.remove();
 
+  // INCLUIMOS LOS JUGADORES EN EL PAYLOAD DEL QR
   const qrPayload = buildQRPayload('IMPORT_TEAM', {
-    id: teamData.id, // <--- ESTO ES VITAL PARA QUE NO CRASHEE INDEXEDDB
+    id: teamData.id,
     name: teamData.name,
     leagueId: teamData.leagueId, 
     delegate: teamData.delegate,
     sportId: activeSportId,
-    color: teamData.color // <--- Mantenemos el color original del equipo
+    color: teamData.color,
+    players: players.map(p => ({
+      id: p.id,
+      name: p.name,
+      number: p.number,
+      position: p.position
+    }))
   });
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
   document.getElementById('qr-team-image').src = qrApiUrl;

@@ -640,42 +640,34 @@ async function openShareLeagueModal(leagueData, exportType) {
       mode: leagueData.mode
     };
 
-    if (exportType === 'initial') {
+        if (exportType === 'initial') {
       const teams = await getTeamsByLeague(leagueData.id);
       
       const teamsWithPlayers = await Promise.all(teams.map(async (t) => {
         const players = await getPlayersByTeam(t.id);
         return {
-          id: t.id,
-          name: t.name,
-          sportId: t.sportId,
-          delegate: t.delegate,
-          color: t.color,
-          players: players.map(p => ({
-            id: p.id,
-            name: p.name,
-            number: p.number,
-            position: p.position
-          }))
+          id: t.id, name: t.name, sportId: t.sportId, delegate: t.delegate, color: t.color,
+          players: players.map(p => ({ id: p.id, name: p.name, number: p.number, position: p.position }))
         };
       }));
-
       payload.teams = teamsWithPlayers;
       
-      payload.matches = matches.map(m => ({ 
-        id: m.id, 
-        status: m.status, 
-        scoreHome: m.scoreHome, 
-        scoreAway: m.scoreAway, 
-        homeTeamId: m.homeTeamId, 
-        awayTeamId: m.awayTeamId, 
-        date: m.date, 
-        round: m.round || 1,
-        slot: m.slot || null,                       
-        winnerGoesToMatchId: m.winnerGoesToMatchId  
+  
+      payload.matches = await Promise.all(matches.map(async (m) => { 
+        const events = await MatchEventRepository.getEventsByMatch(m.id);
+        return { 
+          id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway, 
+          homeTeamId: m.homeTeamId, awayTeamId: m.awayTeamId, date: m.date, round: m.round || 1,
+          slot: m.slot || null, winnerGoesToMatchId: m.winnerGoesToMatchId,
+          events: events || [] 
+        };
       }));
     } else {
-      payload.matches = matches.map(m => ({ id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway }));
+
+      payload.matches = await Promise.all(matches.map(async (m) => {
+        const events = m.status === 'completed' ? await MatchEventRepository.getEventsByMatch(m.id) : [];
+        return { id: m.id, status: m.status, scoreHome: m.scoreHome, scoreAway: m.scoreAway, events: events || [] };
+      }));
     }
 
     const qrPayload = buildQRPayload(exportType === 'update' ? 'LEAGUE_UPDATE' : 'LINK_LEAGUE', payload);
