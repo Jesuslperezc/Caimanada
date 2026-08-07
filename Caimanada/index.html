@@ -43,12 +43,24 @@
         </ul>
       </nav>
 
-      <!-- Selector de Deporte -->
-      <div class="sport-badge" id="active-sport-badge" role="status" aria-live="polite">
-        <select class="sport-badge__select" id="active-sport-selector" title="Cambiar deporte activo">
-          <!-- Las opciones se inyectarán por JavaScript -->
-        </select>
+  <!-- Selector de Deporte (Custom Dropdown Híbrido) -->
+  <div class="sport-badge" id="active-sport-badge" role="status" aria-live="polite">
+    
+      <!-- Trigger del Custom Dropdown -->
+      <div class="sport-badge__trigger" id="sport-badge-trigger" tabindex="0">
+        <span class="sport-badge__selected" id="selectedSport">DEPORTE</span>
+        <span class="sport-badge__arrow" id="sportArrow">▼</span>
       </div>
+      
+      <!-- Menú Desplegable Custom -->
+      <div class="sport-dropdown-menu" id="sportDropdown"></div>
+      
+      <!-- Select Nativo Oculto (Mantiene la lógica de tu JS) -->
+      <select class="sport-badge__select is-hidden" id="active-sport-selector" title="Cambiar deporte activo">
+        <!-- Las opciones se inyectarán por JavaScript como siempre -->
+      </select>
+      
+    </div>
 
     </div>
   </header>
