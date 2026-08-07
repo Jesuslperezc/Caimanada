@@ -23,7 +23,6 @@ export async function renderDashboardView() {
 
   if (dashboardChart) { dashboardChart.destroy(); dashboardChart = null; }
 
-  // --- LÓGICA: Si no hay liga activa, o si la activa NO pertenece al deporte seleccionado ---
   if (!activeLeague || activeLeague.sport !== currentSportId) {
     if (emptyContainer) emptyContainer.style.display = 'flex';
     if (activeInfoContainer) activeInfoContainer.style.display = 'none';
@@ -49,7 +48,7 @@ export async function renderDashboardView() {
   // Pintar los datos básicos de la liga activa SIEMPRE
   document.getElementById('dash-league-name').textContent = activeLeague.name || 'Liga Activa';
   document.getElementById('dash-league-mode').textContent = leagueMode;
-  document.getElementById('mvp-title-label').textContent = `El Rey de la Caimana (${pointsPlural})`;
+  document.getElementById('mvp-title-label').textContent = `El Rey de la CaimanaDa 🐊 (${pointsPlural})`;
   document.getElementById('leader-label').textContent = leagueMode.includes('Liga') ? 'Líder de la Tabla' : 'Favorito al Título';
   document.getElementById('next-match-label').textContent = 'Próximo Enfrentamiento';
 
@@ -65,33 +64,8 @@ export async function renderDashboardView() {
   const matches = await getMatchesByLeague(activeLeague.id) || [];
   const standings = calculateStandings(teams, matches) || [];
 
-  // --- Idea 1: Estado de Sincronización P2P ---
+  // Partidos ya jugados (necesario para Termómetro y MVP)
   const completedMatches = matches.filter(m => m.status === 'completed');
-  const p2pIcon = document.getElementById('p2p-icon');
-  const p2pText = document.getElementById('p2p-text');
-  const p2pTitle = document.getElementById('p2p-title');
-  
-  if (activeLeague.role === 'owner' && completedMatches.length > 0) {
-    const lastSync = activeLeague.lastSyncAt ? new Date(activeLeague.lastSyncAt).getTime() : 0;
-    const unsyncedMatches = completedMatches.filter(m => new Date(m.date || Date.now()).getTime() > lastSync).length;
-    
-    if (unsyncedMatches > 0) {
-      p2pIcon.textContent = '🟠';
-      p2pTitle.textContent = 'Sync Requerida';
-      p2pText.textContent = `${unsyncedMatches} partidos pendientes`;
-      p2pText.style.color = '#f59e0b';
-    } else {
-      p2pIcon.textContent = '🟢';
-      p2pTitle.textContent = 'Estado';
-      p2pText.textContent = 'Sincronizada';
-      p2pText.style.color = '#10b981';
-    }
-  } else {
-    p2pIcon.textContent = '🔵';
-    p2pTitle.textContent = 'Estado';
-    p2pText.textContent = activeLeague.role === 'guest' ? 'Modo Invitado' : 'Lista para jugar';
-    p2pText.style.color = '#94a3b8';
-  }
 
   // --- Próximo Partido ---
   const now = new Date();
