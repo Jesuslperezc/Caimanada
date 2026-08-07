@@ -272,7 +272,7 @@ async function renderLeaguesCards(leagues, activeLeague) {
             }
             
             ${!isGuest ? `<button class="btn btn--secondary btn--sm btn-edit-league" data-id="${safeId}">✏️ Editar</button>` : '<div></div>'}
-            ${!isGuest ? `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">⚡ Fixture</button>` : '<div></div>'}
+            ${!isGuest ? `<button class="btn btn--primary btn--sm btn-gen-fixture" data-id="${safeId}" data-mode="${safeMode}" data-teams="${teams.length}">⚡ Partidos</button>` : '<div></div>'}
             
             ${importTeamsBtn}
             ${primaryActionBtn}

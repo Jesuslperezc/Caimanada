@@ -7,11 +7,11 @@ export class MatchChronometer {
   }
 
   reset() {
-    // Si tiene reloj (Fútbol), empieza en el máximo. Si no (Voleibol), en 0.
     this.currentTime = this.config.hasClock ? (this.config.periodDuration || 0) : 0;
     this.currentPeriodIndex = 0;
     this.isRunning = false;
     this.isBreak = false;
+    this.hasStarted = false;
     this.finished = false;
     this.intervalId = null;
   }
@@ -22,7 +22,7 @@ export class MatchChronometer {
   }
 
   get formattedTime() {
-    const totalSeconds = Math.max(0, this.currentTime); // Evitar negativos
+    const totalSeconds = Math.max(0, this.currentTime);
     const mins = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
     const secs = (totalSeconds % 60).toString().padStart(2, '0');
     return `${mins}:${secs}`;
@@ -31,18 +31,14 @@ export class MatchChronometer {
   start() {
     if (this.finished || this.isRunning) return;
     this.isRunning = true;
-    
+    this.hasStarted = true;
     this.intervalId = setInterval(() => {
       if (this.config.hasClock) {
-        this.currentTime--; // RESTAR para Fútbol/Básquet
-        if (this.currentTime <= 0) {
-          this.currentTime = 0;
-          this.pause();
-        }
+        this.currentTime--;
+        if (this.currentTime <= 0) { this.currentTime = 0; this.pause(); }
       } else {
-        this.currentTime++; // SUMAR para Voleibol/Pádel
+        this.currentTime++;
       }
-      
       if (this.onTick) this.onTick(this.getState());
     }, 1000);
   }
@@ -57,7 +53,7 @@ export class MatchChronometer {
     this.pause();
     if (this.currentPeriodIndex < this.config.periods - 1) {
       this.currentPeriodIndex++;
-      this.currentTime = this.config.hasClock ? (this.config.periodDuration || 0) : 0; // Reiniciar tiempo
+      this.currentTime = this.config.hasClock ? (this.config.periodDuration || 0) : 0;
       this.isBreak = false;
       if (this.onPeriodChange) this.onPeriodChange(this.getState());
     } else {
@@ -69,10 +65,31 @@ export class MatchChronometer {
   startBreak(isLongBreak = false) {
     this.pause();
     this.isBreak = true;
+    
+    // Si es Voleibol/PingPong 
+    if (!this.config.hasClock && this.config.breakDuration > 0) {
+      this.currentTime = this.config.breakDuration;
+      this.isRunning = true;
+      this.intervalId = setInterval(() => {
+        this.currentTime--;
+        if (this.onTick) this.onTick(this.getState());
+        if (this.currentTime <= 0) {
+          this.pause();
+          this.isBreak = false;
+          this.nextPeriod(); 
+        }
+      }, 1000);
+      if (this.onPeriodChange) this.onPeriodChange(this.getState());
+      return;
+    }
+
+    // Si no tiene descanso
     if (!this.config.hasClock) {
       if (this.onPeriodChange) this.onPeriodChange(this.getState());
       return;
     }
+
+    // Descanso normal con cuenta regresiva (Fútbol, Básquet)
     this.currentTime = isLongBreak && this.config.breakDurationLong ? this.config.breakDurationLong : this.config.breakDuration;
     this.isRunning = true;
     this.intervalId = setInterval(() => {
@@ -81,7 +98,7 @@ export class MatchChronometer {
       if (this.currentTime <= 0) {
         this.pause();
         this.isBreak = false;
-        this.nextPeriod(); // Avanza automáticamente al siguiente periodo
+        this.nextPeriod();
       }
     }, 1000);
   }
@@ -94,6 +111,7 @@ export class MatchChronometer {
       currentPeriodName: this.currentPeriodName,
       isRunning: this.isRunning,
       isBreak: this.isBreak,
+      hasStarted: this.hasStarted,
       finished: this.finished
     };
   }
