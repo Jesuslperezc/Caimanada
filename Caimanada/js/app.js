@@ -1,6 +1,6 @@
 import { initRouter } from './utils/router.js';
 import { initNavbar, renderUserAvatar } from './components/navbar.js';
-import { initSportSwitcher } from './components/sportSwitcher.js';
+import { initSportSwitcher } from './components/sportswitcher.js';
 import { initSession } from './utils/session.js';
 import { initGlobalFooter } from './components/footer.js';
 
