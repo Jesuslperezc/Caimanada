@@ -1,4 +1,4 @@
-const CACHE_NAME = 'caimanada-cache-v13';
+const CACHE_NAME = 'caimanada-cache-v18';
 const urlsToCache = [
   './',
   './index.html',
@@ -39,22 +39,38 @@ self.addEventListener('activate', e => {
   return self.clients.claim();
 });
 
-// Fetch: Interceptar peticiones (Estrategia: Cache First, luego Red)
+// Fetch: Interceptar peticiones
 self.addEventListener('fetch', e => {
+  const requestUrl = e.request.url;
+
+  // 1. ESTRATEGIA "NETWORK FIRST" PARA HTML, JS Y CSS (Tus archivos locales)
+  // Siempre busca la versión más nueva en Netlify. Si falla, usa la caché.
+  if (e.request.mode === 'navigate' || requestUrl.includes('/js/') || requestUrl.includes('/css/')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          // Si la red respondió, guardamos esta versión nueva en caché
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(e.request, responseClone);
+          });
+          return response; // Le mostramos al usuario la versión nueva de inmediato
+        })
+        .catch(() => {
+          // Si no hay internet (offline), entregamos lo que tengamos en caché
+          return caches.match(e.request).then(cachedResponse => {
+            return cachedResponse || caches.match('./index.html');
+          });
+        })
+    );
+    return;
+  }
+
+  // 2. ESTRATEGIA "CACHE FIRST" PARA LIBRERÍAS EXTERNAS (Chart.js, jsQR)
+  // Estas no cambian nunca, así que es mejor servirlas desde caché para ir más rápido
   e.respondWith(
-    caches.match(e.request)
-      .then(response => {
-        // Si está en caché, lo devolvemos
-        if (response) {
-          return response;
-        }
-        // Si no, vamos a la red
-        return fetch(e.request).catch(() => {
-          // Si falla la red (offline) y es una navegación, mostramos el index
-          if (e.request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
-        });
-      })
+    caches.match(e.request).then(response => {
+      return response || fetch(e.request);
+    })
   );
 });

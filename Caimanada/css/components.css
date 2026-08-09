@@ -1,983 +1,177 @@
 /* ====================================================================
-   1. HEADER Y NAVEGACIÓN SUPERIOR (GLASSMORPHISM Y LOGO CENTRADO)
+   HEADER Y NAVEGACIÓN SUPERIOR
    ==================================================================== */
 .app-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  width: 100%;
-  background-color: var(--bg-header);
-  backdrop-filter: blur(1.25rem) saturate(180%);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(180%);
+  position: sticky; top: 0; z-index: 100; width: 100%; background-color: var(--bg-header);
+  backdrop-filter: blur(1.25rem) saturate(180%); -webkit-backdrop-filter: blur(1.25rem) saturate(180%);
   border-bottom: 0.0625rem solid var(--border-subtle);
 }
 
 .app-header__container {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr; /* Izquierda | Centro (Logo) | Derecha */
-  align-items: center;
-  max-width: 80rem; /* 1280px */
-  margin: 0 auto;
-  padding: 0.5rem 1.5rem;
-  height: 5rem; /* 80px */
-  gap: 1rem;
-  position: relative;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  max-width: 80rem; margin: 0 auto; padding: 0.5rem 1.5rem; height: 5rem; gap: 1rem; position: relative;
 }
 
-.app-header__brand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  width: 100%;
-  height: 100%;
-}
-
+.app-header__brand { display: flex; align-items: center; justify-content: center; text-decoration: none; width: 100%; height: 100%; }
 .app-header__logo-img {
-  height: 3.4375rem !important; /* 55px */
-  width: auto !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  display: block;
-  object-fit: contain;
-  filter: drop-shadow(0 0 0.5rem rgba(0, 255, 157, 0.4));
-  transition: filter 0.3s ease;
+  height: 3.4375rem !important; width: auto !important; max-width: 100% !important; max-height: 100% !important;
+  display: block; object-fit: contain; filter: drop-shadow(0 0 0.5rem rgba(0, 255, 157, 0.4)); transition: filter 0.3s ease;
 }
+.app-header__brand:hover .app-header__logo-img { filter: drop-shadow(0 0 0.9375rem var(--accent-primary)); }
 
-.app-header__brand:hover .app-header__logo-img {
-  filter: drop-shadow(0 0 0.9375rem var(--accent-primary));
-}
-
-/* --- AVATAR DE USUARIO (ESQUINA SUPERIOR DERECHA) ---
-   renderUserAvatar() en navbar.js inserta un <img class="app-header__user-avatar">
-   directo dentro de .app-header__container (que es position: relative).
-   Sin esta regla el <img> no tiene ancho/alto/object-fit, así que se
-   renderiza a su tamaño nativo y desborda el header. */
 .app-header__user-avatar {
-  position: absolute;
-  top: 50%;
-  right: 1.5rem;
-  transform: translateY(-50%);
-  width: 2.75rem;
-  height: 2.75rem;
-  max-width: 2.75rem;
-  max-height: 2.75rem;
-  border-radius: 50%;
-  object-fit: cover;
-  cursor: pointer;
-  border: 0.125rem solid rgba(0, 255, 157, 0.25);
-  box-shadow: 0 0 0.75rem rgba(0, 255, 157, 0.1);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 20;
-  flex-shrink: 0;
+  position: absolute; top: 50%; right: 1.5rem; transform: translateY(-50%); width: 2.75rem; height: 2.75rem;
+  max-width: 2.75rem; max-height: 2.75rem; border-radius: 50%; object-fit: cover; cursor: pointer;
+  border: 0.125rem solid rgba(0, 255, 157, 0.25); box-shadow: 0 0 0.75rem rgba(0, 255, 157, 0.1);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 20; flex-shrink: 0;
 }
-
-.app-header__user-avatar:hover {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 1.25rem rgba(0, 255, 157, 0.25);
-  transform: translateY(-50%) scale(1.08);
-}
+.app-header__user-avatar:hover { border-color: var(--accent-primary); box-shadow: 0 0 1.25rem rgba(0, 255, 157, 0.25); transform: translateY(-50%) scale(1.08); }
 
 /* --- NAVEGACIÓN ESCRITORIO --- */
-.nav-desktop {
-  justify-self: start;
-  display: block;
-}
-
-.nav-desktop__list {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  list-style: none;
-}
-
+.nav-desktop { justify-self: start; display: block; }
+.nav-desktop__list { display: flex; align-items: center; gap: 2rem; list-style: none; }
 .nav-desktop__link {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-decoration: none;
-  padding: 0.5rem 0.25rem;
-  position: relative;
-  transition: color 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.0625rem;
+  font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-decoration: none;
+  padding: 0.5rem 0.25rem; position: relative; transition: color 0.3s ease; text-transform: uppercase; letter-spacing: 0.0625rem;
 }
-
 .nav-desktop__link:hover { color: var(--text-primary); }
 .nav-desktop__link--active { color: var(--text-primary); }
-
 .nav-desktop__link--active::after {
-  content: '';
-  position: absolute;
-  bottom: -0.5rem;
-  left: 0;
-  width: 100%;
-  height: 0.125rem;
-  background-color: var(--accent-primary);
-  border-radius: var(--radius-full);
-  box-shadow: 0 0 0.625rem var(--accent-primary);
+  content: ''; position: absolute; bottom: -0.5rem; left: 0; width: 100%; height: 0.125rem;
+  background-color: var(--accent-primary); border-radius: var(--radius-full); box-shadow: 0 0 0.625rem var(--accent-primary);
 }
-/* --- SELECTOR DE DEPORTE (CUSTOM DROPDOWN GLASS) --- */
+
+/* --- SELECTOR DE DEPORTE --- */
 .sport-badge {
-  justify-self: end;
-  position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: stretch;
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin-right: 3.5rem; /* Espacio en PC para avatar */
-  max-width: 100%;
-  /* SIN overflow: hidden aquí para no cortar el dropdown */
+  justify-self: end; position: relative; display: inline-flex; flex-direction: column; align-items: stretch;
+  background: transparent; border: none; padding: 0; margin-right: 3.5rem; max-width: 100%;
 }
-
 .sport-badge__trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: rgba(0, 255, 157, 0.05);
-  border: 0.0625rem solid rgba(0, 255, 157, 0.3);
-  padding: 0.4rem 1.5rem 0.4rem 0.8rem;
-  border-radius: 1.25rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  user-select: none;
-  max-width: 100%;
-  min-width: 0;
-  /* SIN overflow: hidden aquí */
+  display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(0, 255, 157, 0.05);
+  border: 0.0625rem solid rgba(0, 255, 157, 0.3); padding: 0.4rem 1.5rem 0.4rem 0.8rem; border-radius: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; user-select: none; max-width: 100%; min-width: 0;
 }
-
 .sport-badge__trigger:hover, .sport-badge__trigger:focus {
-  background: rgba(0, 255, 157, 0.15);
-  border-color: var(--accent-primary);
-  box-shadow: var(--glow-primary);
-  transform: translateY(-0.0625rem);
-  outline: none;
+  background: rgba(0, 255, 157, 0.15); border-color: var(--accent-primary); box-shadow: var(--glow-primary);
+  transform: translateY(-0.0625rem); outline: none;
 }
-
 .sport-badge__selected {
-  font-weight: 800;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.0625rem;
-  color: var(--accent-primary);
-  white-space: nowrap;
-  overflow: hidden; /* El corte del texto pasa AQUÍ adentro */
-  text-overflow: ellipsis;
-  max-width: 100%;
-  min-width: 0; /* Permite que el flexbox lo encoja */
+  font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.0625rem; color: var(--accent-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; min-width: 0;
 }
+.sport-badge__arrow { flex-shrink: 0; font-size: 0.5rem; color: var(--accent-primary); transition: transform 0.3s ease; margin-left: 0.2rem; }
+.sport-badge__arrow.open { transform: rotate(180deg); }
 
-.sport-badge__arrow {
-  flex-shrink: 0;
-  font-size: 0.5rem;
-  color: var(--accent-primary);
-  transition: transform 0.3s ease;
-  margin-left: 0.2rem;
-}
-
-.sport-badge__arrow.open {
-  transform: rotate(180deg);
-}
-/* Menú Desplegable Glass (Más pequeño e izado a la izquierda) */
 .sport-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  left: 0; /* Anclado a la izquierda de la pastilla */
-  right: auto; /* Crece hacia la derecha (hacia el centro de la pantalla) */
-  width: max-content;
-  max-width: 150px; /* Tope duro mucho más pequeño */
-  min-width: 100px;
-  background: rgba(2, 15, 9, 0.98);
-  backdrop-filter: blur(0.75rem);
-  -webkit-backdrop-filter: blur(0.75rem);
-  border: 0.0625rem solid rgba(0, 255, 157, 0.2);
-  border-radius: 0.75rem;
-  padding: 0.3rem; /* Padding interno reducido */
-  z-index: 1000;
-  max-height: 220px;
-  overflow-y: auto;
-  display: none;
-  box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.8);
+  position: absolute; top: calc(100% + 0.5rem); left: 0; right: auto; width: max-content; max-width: 150px; min-width: 100px;
+  background: rgba(2, 15, 9, 0.98); backdrop-filter: blur(0.75rem); -webkit-backdrop-filter: blur(0.75rem);
+  border: 0.0625rem solid rgba(0, 255, 157, 0.2); border-radius: 0.75rem; padding: 0.3rem; z-index: 1000;
+  max-height: 220px; overflow-y: auto; display: none; box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.8);
 }
-
-.sport-dropdown-menu.open {
-  display: block;
-  animation: dropdownFadeIn 0.2s ease forwards;
-}
-
-@keyframes dropdownFadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+.sport-dropdown-menu.open { display: block; animation: dropdownFadeIn 0.2s ease forwards; }
 .sport-dropdown-item {
-  padding: 0.4rem 0.6rem; /* Items más compactos */
-  font-size: 0.65rem; /* Texto más pequeño */
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.03rem;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  padding: 0.4rem 0.6rem; font-size: 0.65rem; font-weight: 600; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.03rem; border-radius: 0.4rem; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
 }
+.sport-dropdown-item:hover { background: rgba(0, 255, 157, 0.1); color: var(--accent-primary); }
+.sport-dropdown-item.active { background: rgba(0, 255, 157, 0.15); color: var(--accent-primary); border: 0.0625rem solid rgba(0, 255, 157, 0.3); }
 
-.sport-dropdown-item:hover {
-  background: rgba(0, 255, 157, 0.1);
-  color: var(--accent-primary);
-}
-
-.sport-dropdown-item.active {
-  background: rgba(0, 255, 157, 0.15);
-  color: var(--accent-primary);
-  border: 0.0625rem solid rgba(0, 255, 157, 0.3);
-}
-/* --- RESPONSIVE HEADER MÓVIL (SIN DESBORDAMIENTO) --- */
+/* RESPONSIVE HEADER MÓVIL */
 @media (max-width: 48em) { 
-  .app-header__container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 1rem;
-    height: 4.25rem;
-    gap: 0.5rem;
-  }
-  
+  .app-header__container { display: flex; justify-content: space-between; align-items: center; padding: 0 1rem; height: 4.25rem; gap: 0.5rem; }
   .nav-desktop { display: none !important; }
-  
-  .app-header__brand {
-    flex: 0 0 auto;
-    max-width: 35%;
-  }
-  .app-header__logo-img {
-    height: 2.5rem !important;
-  }
-
-  .app-header__user-avatar {
-    right: 1rem;
-    width: 2.25rem;
-    height: 2.25rem;
-    max-width: 2.25rem;
-    max-height: 2.25rem;
-  }
-  
-  #active-sport-badge {
-    flex: 1 1 auto;
-    margin-left: auto;
-    margin-right: 3rem; /* Espacio para avatar */
-    max-width: 45%; /* Tope duro */
-    min-width: 0;
-    align-items: flex-end;
-    /* SIN overflow: hidden aquí */
-  }
-
-  .sport-badge__trigger {
-    width: 100%;
-    padding: 0.25rem 0.8rem 0.25rem 0.4rem;
-    border-radius: 1rem;
-    justify-content: center;
-  }
-  
-  .sport-badge__selected {
-    font-size: 0.65rem;
-    text-align: center;
-  }
-
-  /* El dropdown en móvil se hace aún más pequeño y a la izquierda */
-  .sport-dropdown-menu {
-    left: 0;
-    right: auto;
-    max-width: 130px; /* Súper reducido en móvil */
-    min-width: 55px;
-  }
+  .app-header__brand { flex: 0 0 auto; max-width: 35%; }
+  .app-header__logo-img { height: 2.5rem !important; }
+  .app-header__user-avatar { right: 1rem; width: 2.25rem; height: 2.25rem; max-width: 2.25rem; max-height: 2.25rem; }
+  #active-sport-badge { flex: 1 1 auto; margin-left: auto; margin-right: 3rem; max-width: 45%; min-width: 0; align-items: flex-end; }
+  .sport-badge__trigger { width: 100%; padding: 0.25rem 0.8rem 0.25rem 0.4rem; border-radius: 1rem; justify-content: center; }
+  .sport-badge__selected { font-size: 0.65rem; text-align: center; }
+  .sport-dropdown-menu { left: 0; right: auto; max-width: 130px; min-width: 55px; }
 }
+
 /* ====================================================================
-   2. NAVEGACIÓN MÓVIL INFERIOR (DOCK SUBLIME FLOTANTE)
+   NAVEGACIÓN MÓVIL INFERIOR
    ==================================================================== */
 .nav-mobile {
-  position: fixed;
-  bottom: 1.25rem; /* 20px */
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 2.5rem); /* Margen lateral fluido */
-  max-width: 30rem; /* 480px */
-  z-index: 1000;
-  background-color: rgba(2, 15, 9, 0.8);
-  backdrop-filter: blur(1.25rem) saturate(180%);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(180%);
-  border: 0.0625rem solid rgba(0, 255, 157, 0.15);
-  border-radius: 1.5rem;
-  padding: 0.5rem;
+  position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); width: calc(100% - 2.5rem); max-width: 30rem; z-index: 1000;
+  background-color: rgba(2, 15, 9, 0.8); backdrop-filter: blur(1.25rem) saturate(180%); -webkit-backdrop-filter: blur(1.25rem) saturate(180%);
+  border: 0.0625rem solid rgba(0, 255, 157, 0.15); border-radius: 1.5rem; padding: 0.5rem;
   box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.6), 0 0 0.9375rem rgba(0, 255, 157, 0.05);
 }
-
-.nav-mobile__list {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.nav-mobile__item {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* OCULTAMOS EL BOTÓN (+) SIN DEJAR HUECO */
-.nav-mobile__item--action,
-.nav-mobile__action-btn {
-  display: none !important; 
-}
-
+.nav-mobile__list { display: flex; align-items: center; justify-content: space-between; list-style: none; margin: 0; padding: 0; }
+.nav-mobile__item { flex: 1; display: flex; justify-content: center; align-items: center; }
+.nav-mobile__item--action, .nav-mobile__action-btn { display: none !important; } 
 .nav-mobile__link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  text-decoration: none;
-  color: var(--text-muted);
-  padding: 0.5rem 0.25rem;
-  transition: all 0.3s ease;
-  width: 100%;
-  border-radius: 1rem;
-  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem;
+  text-decoration: none; color: var(--text-muted); padding: 0.5rem 0.25rem; transition: all 0.3s ease; width: 100%; border-radius: 1rem; position: relative;
 }
-
-.nav-mobile__icon {
-  width: 1.375rem; /* 22px */
-  height: 1.375rem;
-  transition: transform 0.3s ease, filter 0.3s ease;
-}
-
-.nav-mobile__label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03125rem;
-}
-
+.nav-mobile__icon { width: 1.375rem; height: 1.375rem; transition: transform 0.3s ease, filter 0.3s ease; }
+.nav-mobile__label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03125rem; }
 .nav-mobile__link--active {
-  color: var(--accent-primary);
-  background: rgba(0, 255, 157, 0.1);
+  color: var(--accent-primary); background: rgba(0, 255, 157, 0.1);
   box-shadow: inset 0 0 0 0.0625rem rgba(0, 255, 157, 0.3), 0 0 0.75rem rgba(0, 255, 157, 0.1);
 }
-
-.nav-mobile__link--active .nav-mobile__icon {
-  filter: drop-shadow(0 0 0.3125rem var(--accent-primary));
-  transform: translateY(-0.125rem);
-}
-
-@media (min-width: 48.063em) {
-  .nav-mobile { display: none; }
-}
+.nav-mobile__link--active .nav-mobile__icon { filter: drop-shadow(0 0 0.3125rem var(--accent-primary)); transform: translateY(-0.125rem); }
+@media (min-width: 48.063em) { .nav-mobile { display: none; } }
 
 /* ====================================================================
-   3. TARJETAS BASE (INFO-CARD GLASS VERDE)
+   TARJETAS BASE (INFO-CARD GLASS VERDE)
    ==================================================================== */
 .info-card {
   background: linear-gradient(160deg, var(--bg-card) 0%, rgba(2, 15, 9, 0.8) 100%);
-  backdrop-filter: blur(0.75rem);
-  -webkit-backdrop-filter: blur(0.75rem);
-  border: 0.0625rem solid var(--border-card);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  backdrop-filter: blur(0.75rem); -webkit-backdrop-filter: blur(0.75rem);
+  border: 0.0625rem solid var(--border-card); border-radius: var(--radius-lg); padding: 1.5rem;
+  box-shadow: var(--shadow-lg); display: flex; flex-direction: column; justify-content: space-between;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
 }
-
 .info-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 1.25rem; right: 1.25rem;
-  height: 0.0625rem;
-  background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-  opacity: 0.7;
+  content: ''; position: absolute; top: 0; left: 1.25rem; right: 1.25rem; height: 0.0625rem;
+  background: linear-gradient(90deg, transparent, var(--accent-primary), transparent); opacity: 0.7;
 }
-
-.info-card:hover {
-  border-color: var(--border-card-hover);
-  box-shadow: 0 0 1.25rem rgba(0, 255, 157, 0.15);
-  transform: translateY(-0.25rem);
-}
-
+.info-card:hover { border-color: var(--border-card-hover); box-shadow: 0 0 1.25rem rgba(0, 255, 157, 0.15); transform: translateY(-0.25rem); }
 .info-card__header { margin-bottom: 1rem; }
-
 .info-card__label {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.09375rem;
-  color: var(--accent-primary);
-  background: rgba(0, 255, 157, 0.1);
-  padding: 0.25rem 0.6rem;
-  border-radius: 0.25rem;
-  border: 0.0625rem solid rgba(0, 255, 157, 0.2);
+  display: inline-block; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09375rem;
+  color: var(--accent-primary); background: rgba(0, 255, 157, 0.1); padding: 0.25rem 0.6rem; border-radius: 0.25rem; border: 0.0625rem solid rgba(0, 255, 157, 0.2);
 }
-
 .info-card__highlight {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: var(--text-primary);
-  margin-top: 0.75rem;
-  margin-bottom: 0.35rem;
-  letter-spacing: -0.02em;
-  text-shadow: 0 0 0.9375rem rgba(255, 255, 255, 0.1);
+  font-size: 1.5rem; font-weight: 900; color: var(--text-primary); margin-top: 0.75rem; margin-bottom: 0.35rem;
+  letter-spacing: -0.02em; text-shadow: 0 0 0.9375rem rgba(255, 255, 255, 0.1);
 }
-
-.info-card__subtext {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
+.info-card__subtext { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
 
 /* ====================================================================
-   4. TOASTS / NOTIFICACIONES (HUD STYLE)
+   TOASTS / NOTIFICACIONES
    ==================================================================== */
-.cmd-toast-container {
-  position: fixed; 
-  bottom: 5.625rem; right: 1.25rem; z-index: 10000;
-  display: flex; flex-direction: column-reverse; gap: 0.625rem; pointer-events: none;
-}
-
-@media (min-width: 48.063em) {
-  .cmd-toast-container { bottom: 1.25rem; }
-}
-
+.cmd-toast-container { position: fixed; bottom: 5.625rem; right: 1.25rem; z-index: 10000; display: flex; flex-direction: column-reverse; gap: 0.625rem; pointer-events: none; }
+@media (min-width: 48.063em) { .cmd-toast-container { bottom: 1.25rem; } }
 .cmd-toast {
-  position: relative; display: flex; align-items: center; gap: 0.875rem;
-  min-width: 17.5rem; max-width: 25rem; padding: 0.875rem;
-  background: rgba(2, 15, 9, 0.95);
-  backdrop-filter: blur(0.625rem);
-  border: 0.0625rem solid rgba(0, 255, 157, 0.1);
-  border-radius: 0.75rem;
-  box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.5);
-  overflow: hidden;
+  position: relative; display: flex; align-items: center; gap: 0.875rem; min-width: 17.5rem; max-width: 25rem; padding: 0.875rem;
+  background: rgba(2, 15, 9, 0.95); backdrop-filter: blur(0.625rem); border: 0.0625rem solid rgba(0, 255, 157, 0.1);
+  border-radius: 0.75rem; box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.5); overflow: hidden;
 }
-
 .cmd-toast__badge { display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 0.5rem; flex-shrink: 0; }
 .cmd-toast__tag { font-size: 0.65rem; font-weight: 900; letter-spacing: 0.09375rem; text-transform: uppercase; }
 .cmd-toast__msg { margin-top: 0.125rem; font-size: 0.85rem; font-weight: 600; color: #f3f4f6; line-height: 1.3; }
 .cmd-toast__lightbar { position: absolute; bottom: 0; left: 0; height: 0.1875rem; width: 100%; }
-
 .cmd-toast--success { border-left: 0.1875rem solid #00ff9d; }
 .cmd-toast--success .cmd-toast__badge { background: rgba(0, 255, 157, 0.1); color: #00ff9d; border: 0.0625rem solid rgba(0, 255, 157, 0.3); }
 .cmd-toast--success .cmd-toast__tag { color: #00ff9d; }
 .cmd-toast--success .cmd-toast__lightbar { background: linear-gradient(90deg, #00ff9d, transparent); }
-
 .cmd-toast--champion { border-left: 0.1875rem solid #ffb703; }
 .cmd-toast--champion .cmd-toast__badge { background: rgba(255, 183, 3, 0.15); color: #ffb703; border: 0.0625rem solid rgba(255, 183, 3, 0.3); }
 .cmd-toast--champion .cmd-toast__tag { color: #ffb703; }
 .cmd-toast--champion .cmd-toast__lightbar { background: linear-gradient(90deg, #ffb703, transparent); }
-
 .cmd-toast--danger { border-left: 0.1875rem solid #ff3366; }
 .cmd-toast--danger .cmd-toast__badge { background: rgba(255, 51, 102, 0.1); color: #ff3366; border: 0.0625rem solid rgba(255, 51, 102, 0.3); }
 .cmd-toast--danger .cmd-toast__tag { color: #ff3366; }
 .cmd-toast--danger .cmd-toast__lightbar { background: linear-gradient(90deg, #ff3366, transparent); }
-
 .cmd-toast--warning { border-left: 0.1875rem solid #ff9f1c; }
 .cmd-toast--warning .cmd-toast__badge { background: rgba(255, 159, 28, 0.12); color: #ff9f1c; border: 0.0625rem solid rgba(255, 159, 28, 0.25); }
 .cmd-toast--warning .cmd-toast__tag { color: #ff9f1c; }
 .cmd-toast--warning .cmd-toast__lightbar { background: linear-gradient(90deg, #ff9f1c, transparent); }
-
-caiman-toast {
-  display: block;
-  pointer-events: auto;
-  animation: cmdPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-caiman-toast.is-leaving {
-  animation: cmdPopOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
-}
-
-@keyframes cmdPopIn {
-  from { opacity: 0; transform: translateY(1.25rem) scale(0.92); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes cmdPopOut {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateX(1.875rem) scale(0.95); }
-}
-/* ====================================================================
-   PERFIL DE USUARIO - DISEÑO SUBLIME GLASS
-   (Bloque legado .profile-overlay / .profile-card: ya no lo usa
-   openProfileModal(), que ahora inserta .modal-overlay / .modal-card.
-   Se deja tal cual por si otra parte de la app aún lo referencia.)
-   ==================================================================== */
-
-/* --- OVERLAY DEL PERFIL --- */
-.profile-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(0.5rem);
-  -webkit-backdrop-filter: blur(0.5rem);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  animation: profileFadeIn 0.3s ease forwards;
-}
-
-@keyframes profileFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* --- TARJETA DEL PERFIL --- */
-.profile-card {
-  position: relative;
-  background: linear-gradient(160deg, rgba(6, 24, 14, 0.92) 0%, rgba(2, 15, 9, 0.98) 100%);
-  backdrop-filter: blur(1.25rem);
-  -webkit-backdrop-filter: blur(1.25rem);
-  border: 0.0625rem solid rgba(0, 255, 157, 0.12);
-  border-radius: 1.5rem;
-  padding: 2.5rem 2rem 2rem;
-  max-width: 28rem;
-  width: 100%;
-  box-shadow: 
-    0 2rem 4rem rgba(0, 0, 0, 0.6),
-    0 0 5rem rgba(0, 255, 157, 0.03);
-  animation: profileCardSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  transform: translateY(1rem);
-  opacity: 0;
-}
-
-@keyframes profileCardSlide {
-  from { transform: translateY(2rem); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* Borde de brillo superior */
-.profile-card::before {
-  content: '';
-  position: absolute;
-  top: -0.0625rem;
-  left: 20%;
-  right: 20%;
-  height: 0.125rem;
-  background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-  border-radius: 0 0 50% 50%;
-  opacity: 0.4;
-}
-
-/* --- HEADER DEL PERFIL --- */
-.profile-card__header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.profile-card__avatar-wrapper {
-  position: relative;
-  width: 5.5rem;
-  height: 5.5rem;
-  margin-bottom: 0.75rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: rgba(0, 255, 157, 0.05);
-  border: 0.125rem solid rgba(0, 255, 157, 0.2);
-  box-shadow: 0 0 2rem rgba(0, 255, 157, 0.05);
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.profile-card__avatar-wrapper:hover {
-  transform: scale(1.02);
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 3rem rgba(0, 255, 157, 0.1);
-}
-
-/* Anillo neón alrededor del avatar */
-.profile-card__avatar-wrapper::before {
-  content: '';
-  position: absolute;
-  inset: -0.25rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  padding: 0.125rem;
-  -mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0.3;
-  transition: opacity 0.3s ease;
-}
-
-.profile-card__avatar-wrapper:hover::before {
-  opacity: 0.8;
-}
-
-.profile-card__avatar {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.profile-card__avatar-placeholder {
-  font-size: 2.5rem;
-  color: var(--accent-primary);
-  opacity: 0.4;
-}
-
-.profile-card__title {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  margin: 0;
-}
-
-.profile-card__subtitle {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  font-weight: 400;
-  opacity: 0.6;
-  letter-spacing: 0.03rem;
-}
-
-/* --- CUERPO DEL PERFIL --- */
-.profile-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-/* Campo de formulario */
-.profile-card__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.profile-card__label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06rem;
-  color: var(--text-muted);
-  padding-left: 0.25rem;
-}
-
-.profile-card__input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  border: 0.0625rem solid rgba(0, 255, 157, 0.08);
-  background: rgba(0, 0, 0, 0.3);
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  font-weight: 500;
-  outline: none;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: inset 0 0.125rem 0.5rem rgba(0, 0, 0, 0.2);
-}
-
-.profile-card__input::placeholder {
-  color: var(--text-muted);
-  opacity: 0.3;
-}
-
-.profile-card__input:focus {
-  border-color: var(--accent-primary);
-  background: rgba(0, 0, 0, 0.5);
-  box-shadow: 
-    inset 0 0.125rem 0.5rem rgba(0, 0, 0, 0.3),
-    0 0 1.5rem rgba(0, 255, 157, 0.03);
-  transform: scale(1.01);
-}
-
-.profile-card__input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* --- ESTADÍSTICAS DEL USUARIO (Opcional) --- */
-.profile-card__stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.75rem;
-  border: 0.0625rem solid rgba(0, 255, 157, 0.05);
-  margin-bottom: 0.5rem;
-}
-
-.profile-card__stat {
-  text-align: center;
-}
-
-.profile-card__stat-value {
-  font-size: 1.1rem;
-  font-weight: 900;
-  color: var(--accent-primary);
-  display: block;
-}
-
-.profile-card__stat-label {
-  font-size: 0.55rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04rem;
-  color: var(--text-muted);
-}
-
-/* --- ACCIONES DEL PERFIL --- */
-.profile-card__actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.profile-card__btn {
-  flex: 1;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06rem;
-  border-radius: 0.75rem;
-  border: 0.0625rem solid transparent;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  text-align: center;
-}
-
-.profile-card__btn--primary {
-  background: linear-gradient(135deg, var(--accent-primary), #00cc7d);
-  color: #000000;
-  box-shadow: 0 0.25rem 1rem rgba(0, 255, 157, 0.15);
-}
-
-.profile-card__btn--primary:hover {
-  transform: translateY(-0.125rem) scale(1.02);
-  box-shadow: 0 0.5rem 1.5rem rgba(0, 255, 157, 0.25);
-}
-
-.profile-card__btn--primary:active {
-  transform: scale(0.97);
-}
-
-.profile-card__btn--primary:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.profile-card__btn--secondary {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-secondary);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.profile-card__btn--secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.profile-card__btn--danger {
-  background: rgba(255, 51, 102, 0.08);
-  color: var(--danger);
-  border-color: rgba(255, 51, 102, 0.15);
-}
-
-.profile-card__btn--danger:hover {
-  background: rgba(255, 51, 102, 0.15);
-  border-color: rgba(255, 51, 102, 0.3);
-}
-
-/* --- FOOTER DEL PERFIL (Cerrar sesión) --- */
-.profile-card__footer {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 0.0625rem solid rgba(0, 255, 157, 0.05);
-  display: flex;
-  justify-content: center;
-}
-
-.profile-card__logout {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06rem;
-  color: var(--text-muted);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-}
-
-.profile-card__logout:hover {
-  color: var(--danger);
-  background: rgba(255, 51, 102, 0.05);
-}
-
-/* --- RESPONSIVE --- */
-@media (max-width: 640px) {
-  .profile-overlay {
-    padding: 1rem;
-    align-items: flex-end;
-  }
-
-  .profile-card {
-    padding: 1.75rem 1.25rem 1.5rem;
-    border-radius: 1.25rem 1.25rem 0 0;
-    max-width: 100%;
-    animation: profileCardSlideMobile 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  }
-
-  @keyframes profileCardSlideMobile {
-    from { transform: translateY(2rem); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
-  .profile-card__avatar-wrapper {
-    width: 4.5rem;
-    height: 4.5rem;
-  }
-
-  .profile-card__title {
-    font-size: 1.1rem;
-  }
-
-  .profile-card__stats {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.35rem;
-    padding: 0.5rem;
-  }
-
-  .profile-card__stat-value {
-    font-size: 0.95rem;
-  }
-
-  .profile-card__actions {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .profile-card__btn {
-    padding: 0.65rem 1rem;
-    font-size: 0.7rem;
-  }
-
-  .profile-card__input {
-    padding: 0.65rem 0.875rem;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 400px) {
-  .profile-card {
-    padding: 1.5rem 1rem 1.25rem;
-  }
-
-  .profile-card__avatar-wrapper {
-    width: 4rem;
-    height: 4rem;
-  }
-
-  .profile-card__stats {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.25rem;
-  }
-
-  .profile-card__stat-value {
-    font-size: 0.85rem;
-  }
-
-  .profile-card__stat-label {
-    font-size: 0.5rem;
-  }
-}
-
-/* --- ESTADO DE CARGA --- */
-.profile-card__loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 2rem;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-}
-
-.profile-spinner {
-  width: 1.5rem;
-  height: 1.5rem;
-  border: 0.125rem solid rgba(0, 255, 157, 0.1);
-  border-top-color: var(--accent-primary);
-  border-radius: 50%;
-  animation: profileSpin 0.8s linear infinite;
-}
-
-@keyframes profileSpin {
-  to { transform: rotate(360deg); }
-}
-
-/* ====================================================================
-   FIX: DROPDOWN DE PERFIL ANCLADO BAJO EL AVATAR
-   openProfileModal() inserta <div id="dynamic-profile-modal" class="modal-overlay">
-   con <div class="modal-card"> adentro. Esas clases genéricas no tenían
-   position/anclaje propio, por eso el menú caía al final del documento
-   en vez de desplegarse debajo del avatar. Se scopea todo con el ID
-   para no tocar otros usos de .modal-overlay / .modal-card en la app
-   (por ejemplo el modal de partido/resumen).
-   ==================================================================== */
-#dynamic-profile-modal.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: transparent; /* no oscurece el resto de la app, es un dropdown */
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 5.5rem 1.5rem 0 0; /* debajo del header (5rem de alto) + margen */
-  pointer-events: none; /* deja pasar clicks al resto de la app */
-}
-
-#dynamic-profile-modal .modal-card {
-  pointer-events: auto;
-  width: 100%;
-  background: linear-gradient(160deg, rgba(6, 24, 14, 0.97) 0%, rgba(2, 15, 9, 0.99) 100%) !important;
-  backdrop-filter: blur(1rem);
-  -webkit-backdrop-filter: blur(1rem);
-  border: 0.0625rem solid rgba(0, 255, 157, 0.15) !important;
-  border-radius: 1rem;
-  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.6), 0 0 1.5rem rgba(0, 255, 157, 0.08);
-  animation: dropdownFadeIn 0.2s ease forwards;
-}
-
-@media (max-width: 48em) {
-  #dynamic-profile-modal.modal-overlay {
-    padding: 4.75rem 1rem 0 0; /* header móvil = 4.25rem de alto */
-    align-items: flex-end; /* variante hoja inferior en pantallas chicas */
-  }
-
-  #dynamic-profile-modal.modal-overlay {
-    justify-content: center;
-  }
-}
+caiman-toast { display: block; pointer-events: auto; animation: cmdPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+caiman-toast.is-leaving { animation: cmdPopOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards; }
+
+/* === GRÁFICOS CHART.JS === */
+.chart-container { position: relative; height: 320px; width: 100%; }

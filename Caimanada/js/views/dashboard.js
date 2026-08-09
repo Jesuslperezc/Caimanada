@@ -26,7 +26,6 @@ export async function renderDashboardView() {
   if (!activeLeague || activeLeague.sport !== currentSportId) {
     if (emptyContainer) emptyContainer.style.display = 'flex';
     if (activeInfoContainer) activeInfoContainer.style.display = 'none';
-    
     const sportName = SPORT_DISPLAY_NAMES[currentSportId] || 'este deporte';
     const titleEl = document.getElementById('active-league-title');
     const modeEl = document.getElementById('active-league-mode');
@@ -38,7 +37,6 @@ export async function renderDashboardView() {
   if (emptyContainer) emptyContainer.style.display = 'none';
   if (activeInfoContainer) activeInfoContainer.style.display = 'block';
   
-  // --- ADAPTACIÓN CONTEXTUAL (Con defensiva) ---
   const sportConfig = getTimerConfig(activeLeague.sport) || {};
   const pointsLabel = (sportConfig.pointsLabel || 'Punto').toLowerCase();
   const pointsPlural = pointsLabel + 's';
@@ -52,7 +50,7 @@ export async function renderDashboardView() {
   document.getElementById('next-match-label').textContent = 'Próximo Enfrentamiento';
 
   if (leagueMode.includes('Eliminación')) {
-    if (bracketCard) bracketCard.style.display = 'flex'; // Ajustado a flex para que coincida con info-card
+    if (bracketCard) bracketCard.style.display = 'flex';
   } else {
     if (bracketCard) bracketCard.style.display = 'none';
   }
@@ -62,7 +60,6 @@ export async function renderDashboardView() {
   const standings = calculateStandings(teams, matches) || [];
   const completedMatches = matches.filter(m => m.status === 'completed');
 
-  // --- Próximo Partido ---
   const now = new Date();
   const upcomingMatches = matches
     .filter(m => m.status === 'pending' && (!m.date || new Date(m.date) >= now))
@@ -90,7 +87,6 @@ export async function renderDashboardView() {
     timeEl.textContent = 'No hay próximos encuentros';
   }
 
-  // --- Líder de la Tabla ---
   const leaderTeamNameEl = document.getElementById('leader-team-name');
   const leaderTeamStatsEl = document.getElementById('leader-team-stats');
   if (standings.length > 0) {
@@ -102,7 +98,6 @@ export async function renderDashboardView() {
     leaderTeamStatsEl.textContent = `Aún no hay partidos jugados`;
   }
 
-  // --- Idea 2: Termómetro de Rachas ---
   const hotTeamNameEl = document.getElementById('hot-team-name');
   const hotTeamStatsEl = document.getElementById('hot-team-stats');
   const coldTeamNameEl = document.getElementById('cold-team-name');
@@ -111,24 +106,19 @@ export async function renderDashboardView() {
   if (completedMatches.length >= 2) {
     const teamForms = {};
     teams.forEach(t => teamForms[t.id] = []);
-    
     matches.filter(m => m.status === 'completed').sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(m => {
       if (teamForms[m.homeTeamId]) teamForms[m.homeTeamId].push(m.scoreHome > m.scoreAway ? 'W' : (m.scoreHome < m.scoreAway ? 'L' : 'D'));
       if (teamForms[m.awayTeamId]) teamForms[m.awayTeamId].push(m.scoreHome > m.scoreAway ? 'L' : (m.scoreHome < m.scoreAway ? 'W' : 'D'));
     });
-
     let bestStreak = { team: null, wins: -1 };
     let worstStreak = { team: null, losses: -1 };
-
     Object.keys(teamForms).forEach(teamId => {
       const form = teamForms[teamId].slice(0, 3);
       const wins = form.filter(r => r === 'W').length;
       const losses = form.filter(r => r === 'L').length;
-      
       if (wins > bestStreak.wins) bestStreak = { team: teams.find(t => t.id === teamId), wins };
       if (losses > worstStreak.losses) worstStreak = { team: teams.find(t => t.id === teamId), losses };
     });
-
     if (bestStreak.team && bestStreak.wins > 0) {
       hotTeamNameEl.textContent = bestStreak.team.name;
       hotTeamStatsEl.textContent = `${bestStreak.wins} victorias en últimas 3`;
@@ -146,15 +136,12 @@ export async function renderDashboardView() {
     coldTeamNameEl.textContent = 'Pendiente'; coldTeamStatsEl.textContent = 'Se necesita 1 jornada más';
   }
 
-  // --- Idea 4: MVP de la Jornada ---
   const mvpNameEl = document.getElementById('mvp-player-name');
   const mvpStatsEl = document.getElementById('mvp-player-stats');
-
   if (completedMatches.length > 0) {
     const lastMatch = matches.filter(m => m.status === 'completed').sort((a,b) => new Date(b.date) - new Date(a.date))[0];
     const recentMatches = matches.filter(m => m.status === 'completed' && m.round === lastMatch.round);
     let playerPoints = {};
-
     for (const m of recentMatches) {
       const events = await MatchEventRepository.getEventsByMatch(m.id);
       events.forEach(ev => {
@@ -164,12 +151,10 @@ export async function renderDashboardView() {
         }
       });
     }
-
     let mvp = null;
     Object.keys(playerPoints).forEach(pid => {
       if (!mvp || playerPoints[pid].count > mvp.count) mvp = playerPoints[pid];
     });
-
     if (mvp) {
       mvpNameEl.textContent = mvp.name;
       mvpStatsEl.textContent = `${mvp.count} ${pointsPlural} en la última ${matchWord}`;
@@ -179,7 +164,6 @@ export async function renderDashboardView() {
     }
   }
 
-  // --- Idea 5: Ruta al Título (Eliminación Directa) ---
   if (leagueMode.includes('Eliminación')) {
     const bracketContainer = document.getElementById('bracket-path-container');
     if (bracketContainer) {
@@ -194,8 +178,6 @@ export async function renderDashboardView() {
         if (finalMatch.status === 'completed') {
           winnerName = finalMatch.scoreHome > finalMatch.scoreAway ? homeName : awayName;
         }
-
-        // HTML limpio sin estilos inline
         bracketContainer.innerHTML = `
           <div class="bracket-match">
             <p class="bracket-round-label">FINAL</p>
@@ -213,14 +195,11 @@ export async function renderDashboardView() {
     }
   }
 
-  // --- GRÁFICA DE CHART.JS (Con manejo de estado vacío) ---
   const ctx = document.getElementById('canvas-dashboard-stats');
   const chartWrapper = ctx ? ctx.parentElement : null;
-  
   if (ctx && chartWrapper) {
     const existingMsg = document.getElementById('no-data-dashboard-msg');
     if (existingMsg) existingMsg.remove();
-
     if (standings.length > 0 && standings.some(s => s.pts > 0 || s.pj > 0)) {
       ctx.style.display = 'block';
       dashboardChart = new Chart(ctx, {
@@ -230,15 +209,13 @@ export async function renderDashboardView() {
           datasets: [{
             label: 'Puntos Totales',
             data: standings.map(s => s.pts),
-            backgroundColor: 'rgba(0, 255, 157, 0.6)', // Actualizado al neón
+            backgroundColor: 'rgba(0, 255, 157, 0.6)',
             borderColor: 'rgba(0, 255, 157, 1)',
-            borderWidth: 1,
-            borderRadius: 6
+            borderWidth: 1, borderRadius: 6
           }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
@@ -250,9 +227,7 @@ export async function renderDashboardView() {
       ctx.style.display = 'none';
       const msg = document.createElement('p');
       msg.id = 'no-data-dashboard-msg';
-      msg.className = 'info-card__subtext'; // Reutilizamos clase en lugar de style inline
-      msg.style.textAlign = 'center';
-      msg.style.padding = '3rem 1rem';
+      msg.className = 'info-card__subtext empty-chart-msg';
       msg.textContent = 'No hay datos registrados';
       chartWrapper.appendChild(msg);
     }

@@ -25,10 +25,10 @@ function showConfirmDialog(messageHTML, onConfirmCallback) {
   document.getElementById('dynamic-confirm-modal')?.remove();
   const modalHTML = `
     <div id="dynamic-confirm-modal" class="modal-overlay">
-      <div class="modal-card" style="max-width: 420px; text-align: center;">
+      <div class="modal-card modal-card--confirm">
         <h2 class="modal-card__title">Confirmar Acción</h2>
-        <p style="color: #94a3b8; margin-bottom: 1.5rem; line-height: 1.6; font-size: 0.95rem;">${messageHTML}</p>
-        <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: center;">
+        <p class="modal-subtitle">${messageHTML}</p>
+        <div class="modal-actions">
           <button type="button" id="dyn-confirm-cancel" class="btn btn--secondary">Cancelar</button>
           <button type="button" id="dyn-confirm-accept" class="btn btn--danger">Sí, Eliminar</button>
         </div>
@@ -45,28 +45,23 @@ export async function renderTeamsView() {
   const container = document.getElementById('teams-content-target');
   const searchInput = document.getElementById('teams-search-input');
   const addBtn = document.getElementById('btn-add-team');
-
   if (!container) return;
   container.innerHTML = `<loading-state message="Cargando equipos..."></loading-state>`;
-
   try {
     const activeSportId = getActiveSport();
     const activeLeague = await getActiveLeague();
     const teamsData = await getTeamsBySport(activeSportId);
-
     const playersCountMap = {};
     await Promise.all(teamsData.map(async (team) => {
       const players = await getPlayersByTeam(team.id);
       playersCountMap[team.id] = players ? players.length : 0;
     }));
-
     let statsMap = {};
     if (activeLeague) {
       const matchesData = await getMatchesByLeague(activeLeague.id);
       const standings = calculateStandings(teamsData, matchesData);
       statsMap = Object.fromEntries(standings.map(s => [s.id, s]));
     }
-
     function render(teams) {
       if (!teams || teams.length === 0) {
         container.innerHTML = `
@@ -76,7 +71,6 @@ export async function renderTeamsView() {
           </div>`;
         return;
       }
-
     container.innerHTML = `
       <div class="teams-grid">
         ${teams.map(team => {
@@ -87,7 +81,6 @@ export async function renderTeamsView() {
           const safeId = escapeHTML(team.id);
           const st = statsMap[team.id] || { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 };
           const dgClass = st.dg > 0 ? 'team-stats-dg--positive' : (st.dg < 0 ? 'team-stats-dg--negative' : '');
-
           return `
             <article class="info-card team-card" style="--team-accent: ${safeColor};">
               <header class="info-card__header">
@@ -122,17 +115,14 @@ export async function renderTeamsView() {
         render(filtered);
       };
     }
-
     if (addBtn) {
       addBtn.onclick = () => { openAddTeamModal(activeSportId, async () => { await renderTeamsView(); }); };
     }
-
     container.onclick = async (e) => {
       const btn = e.target.closest('button');
       if (!btn) return;
       const safeId = btn.dataset.id;
       const safeName = btn.dataset.name;
-
       if (btn.classList.contains('btn-add-player')) {
         const currentPlayers = playersCountMap[safeId] || 0;
         const maxPlayers = getMaxPlayersForSport(activeSportId);
@@ -142,7 +132,6 @@ export async function renderTeamsView() {
         }
         openAddPlayerModal(safeId, safeName, activeSportId, currentPlayers, maxPlayers, async () => { await renderTeamsView(); });
       }
-
       if (btn.classList.contains('btn-view-roster')) {
         openRosterModal(safeId, safeName, async () => { await renderTeamsView(); });
       }
@@ -153,13 +142,11 @@ export async function renderTeamsView() {
           await renderTeamsView();
         });
       }
-
       if (btn.classList.contains('btn-share-team')) {
         const team = teamsData.find(t => t.id === safeId);
         if (team) openShareTeamModal(team);
       }
     };
-
     render(teamsData);
     setupScanTeamButton();
   } catch (error) {
@@ -176,16 +163,16 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
   const currentUser = getCurrentUser();
   const modalHTML = `
     <div id="dynamic-team-modal" class="modal-overlay">
-      <div class="modal-card">
+      <div class="modal-card modal-card--form">
         <h2 class="modal-card__title">Registrar Nuevo Club</h2>
         <form id="dynamic-team-form">
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-group">
             <label class="form-group__label">Nombre del Equipo *</label>
-            <input type="text" id="dyn-team-name" required placeholder="Ej: Deportivo Maracaibo" class="form-control" style="width: 100%; padding: 0.5rem;" />
+            <input type="text" id="dyn-team-name" required placeholder="Ej: Deportivo Maracaibo" class="form-control" />
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-group">
             <label class="form-group__label">Deporte *</label>
-            <select id="dyn-team-sport" required class="form-control" style="width: 100%; padding: 0.5rem;">
+            <select id="dyn-team-sport" required class="form-control">
               <option value="futbol_sala">Futbolito / Futsal</option>
               <option value="futbol_campo">Fútbol Campo</option>
               <option value="basketball">Baloncesto</option>
@@ -197,11 +184,11 @@ function openAddTeamModal(defaultSportId, onSaveCallback) {
               <option value="ajedrez">Ajedrez</option>
             </select>
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-group">
             <label class="form-group__label">Delegado / Capitán</label>
-            <input type="text" id="dyn-team-delegate" value="${currentUser ? escapeHTML(currentUser.name) : ''}" readonly class="form-control" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.05); cursor: not-allowed;" />
+            <input type="text" id="dyn-team-delegate" value="${currentUser ? escapeHTML(currentUser.name) : ''}" readonly class="form-control input-readonly" />
           </div>
-          <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+          <div class="modal-actions form-flex--end">
             <button type="button" id="dyn-team-cancel" class="btn btn--secondary">Cancelar</button>
             <button type="submit" class="btn btn--primary">Registrar</button>
           </div>
@@ -237,28 +224,28 @@ async function openAddPlayerModal(teamId, teamName, sportId, currentCount, maxCo
 
   const modalHTML = `
     <div id="dynamic-player-modal" class="modal-overlay">
-      <div class="modal-card">
+      <div class="modal-card modal-card--form">
         <h2 class="modal-card__title">Agregar Jugador</h2>
-        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">Equipo: <strong>${escapeHTML(teamName)}</strong></p>
-        <p id="available-spots-text" style="font-size: 0.8rem; color: #10b981; margin-bottom: 1.5rem; font-weight: bold;">Cupos disponibles: ${availableSpots} de ${maxCount}</p>
+        <p class="modal-subtitle modal-subtitle--left">Equipo: <strong>${escapeHTML(teamName)}</strong></p>
+        <p id="available-spots-text" class="modal-highlight">Cupos disponibles: ${availableSpots} de ${maxCount}</p>
         <form id="dyn-player-form">
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-group">
             <label class="form-group__label">Nombre Completo *</label>
-            <input type="text" id="dyn-player-name" required placeholder="Ej: Roberto Carlos" class="form-control" style="width: 100%; padding: 0.5rem;" autofocus />
+            <input type="text" id="dyn-player-name" required placeholder="Ej: Roberto Carlos" class="form-control" autofocus />
           </div>
-          <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-            <div class="form-group" style="flex: 1;">
+          <div class="form-flex">
+            <div class="form-group">
               <label class="form-group__label">Dorsal *</label>
-              <input type="number" id="dyn-player-number" min="0" max="99" required value="${suggestedNumber}" class="form-control" style="width: 100%; padding: 0.5rem;" />
+              <input type="number" id="dyn-player-number" min="0" max="99" required value="${suggestedNumber}" class="form-control" />
             </div>
-            <div class="form-group" style="flex: 2;">
+            <div class="form-group form-group--double">
               <label class="form-group__label">Posición *</label>
-              <select id="dyn-player-position" required class="form-control" style="width: 100%; padding: 0.5rem;">
+              <select id="dyn-player-position" required class="form-control">
                 ${positions.map(pos => `<option value="${pos}">${pos}</option>`).join('')}
               </select>
             </div>
           </div>
-          <div class="modal-actions" style="display: flex; gap: 0.5rem; justify-content: space-between; margin-top: 1.5rem;">
+          <div class="modal-actions form-flex--between">
             <button type="button" id="dyn-player-cancel" class="btn btn--secondary">Cerrar</button>
             <button type="submit" class="btn btn--primary">+ Agregar y Seguir</button>
           </div>
@@ -299,10 +286,10 @@ function openRosterModal(teamId, teamName, onCloseCallback) {
   document.getElementById('dynamic-roster-modal')?.remove();
   const modalHTML = `
     <div id="dynamic-roster-modal" class="modal-overlay">
-      <div class="modal-card">
+      <div class="modal-card modal-card--form">
         <h2 class="modal-card__title">Plantilla: ${escapeHTML(teamName)}</h2>
-        <div id="dyn-players-list" style="max-height: 350px; overflow-y: auto; margin: 1rem 0;"></div>
-        <div class="modal-actions" style="text-align: right;">
+        <div id="dyn-players-list" class="roster-list"></div>
+        <div class="modal-actions form-flex--end">
           <button type="button" id="dyn-roster-close" class="btn btn--secondary">Cerrar</button>
         </div>
       </div>
@@ -316,12 +303,12 @@ function openRosterModal(teamId, teamName, onCloseCallback) {
     list.innerHTML = `<loading-state message="Cargando plantilla..."></loading-state>`;
     const players = await getPlayersByTeam(teamId);
     if (!players || players.length === 0) {
-      list.innerHTML = `<p style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 1rem;">Sin jugadores registrados.</p>`;
+      list.innerHTML = `<p class="modal-subtitle">Sin jugadores registrados.</p>`;
       return;
     }
     list.innerHTML = players.map(p => `
       <div class="roster-player-row">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
+        <div class="roster-player-info">
           <span class="roster-player-number">#${escapeHTML(p.number)}</span>
           <div>
             <span class="roster-player-name">${escapeHTML(p.name)}</span><br>
@@ -339,22 +326,20 @@ function openRosterModal(teamId, teamName, onCloseCallback) {
 async function openShareTeamModal(teamData) {
   document.getElementById('dynamic-share-team-modal')?.remove();
   const activeSportId = getActiveSport();
-  
-  // OBTENEMOS LOS JUGADORES DEL EQUIPO LOCAL
   const players = await getPlayersByTeam(teamData.id);
 
   const modalHTML = `
     <div id="dynamic-share-team-modal" class="modal-overlay">
-      <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-card modal-card--form">
         <h2 class="modal-card__title">Compartir Equipo</h2>
-        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">Muestra este código QR al Organizador de la liga para que tu equipo quede registrado en su dispositivo.</p>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 1rem;">
-          <div id="qr-team-display" style="padding: 1rem; background: #fff; border-radius: 8px;">
-            <img id="qr-team-image" src="" alt="Código QR de Equipo" style="width: 220px; height: 220px;" />
+        <p class="modal-subtitle">Muestra este código QR al Organizador de la liga para que tu equipo quede registrado en su dispositivo.</p>
+        <div class="qr-image-container">
+          <div class="qr-white-box">
+            <img id="qr-team-image" src="" alt="Código QR de Equipo" />
           </div>
-          <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem; font-weight: bold;">Equipo: ${escapeHTML(teamData.name)} (${players.length} jugadores)</p>
+          <p class="qr-team-caption">Equipo: ${escapeHTML(teamData.name)} (${players.length} jugadores)</p>
         </div>
-        <div class="modal-actions" style="margin-top: 2rem; text-align: right;">
+        <div class="modal-actions form-flex--end">
           <button type="button" id="dyn-share-team-cancel" class="btn btn--secondary">Cerrar</button>
         </div>
       </div>
@@ -363,20 +348,10 @@ async function openShareTeamModal(teamData) {
   const modalEl = document.getElementById('dynamic-share-team-modal');
   document.getElementById('dyn-share-team-cancel').onclick = () => modalEl.remove();
 
-  // INCLUIMOS LOS JUGADORES EN EL PAYLOAD DEL QR
   const qrPayload = buildQRPayload('IMPORT_TEAM', {
-    id: teamData.id,
-    name: teamData.name,
-    leagueId: teamData.leagueId, 
-    delegate: teamData.delegate,
-    sportId: activeSportId,
-    color: teamData.color,
-    players: players.map(p => ({
-      id: p.id,
-      name: p.name,
-      number: p.number,
-      position: p.position
-    }))
+    id: teamData.id, name: teamData.name, leagueId: teamData.leagueId, 
+    delegate: teamData.delegate, sportId: activeSportId, color: teamData.color,
+    players: players.map(p => ({ id: p.id, name: p.name, number: p.number, position: p.position }))
   });
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
   document.getElementById('qr-team-image').src = qrApiUrl;
@@ -389,7 +364,6 @@ export async function setupScanTeamButton() {
     scanBtn.id = 'btn-scan-team';
     scanBtn.className = 'btn btn--secondary';
     scanBtn.innerHTML = 'Escanear Equipo';
-    scanBtn.style.marginLeft = '0.5rem';
     addBtn.parentNode.insertBefore(scanBtn, addBtn.nextSibling);
   }
   if (scanBtn) {
@@ -397,13 +371,13 @@ export async function setupScanTeamButton() {
       document.getElementById('dynamic-scan-team-modal')?.remove();
       const modalHTML = `
         <div id="dynamic-scan-team-modal" class="modal-overlay">
-          <div class="modal-card" style="max-width: 420px;">
+          <div class="modal-card modal-card--form">
             <h2 class="modal-card__title">Escanear Equipo Invitado</h2>
-            <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; text-align: center;">Pide al capitán que abra el QR de su equipo y apunta la cámara aquí.</p>
-            <div id="qr-team-video-container" style="border-radius: 8px; overflow: hidden; margin-bottom: 1rem;">
-              <video id="qr-team-video" style="width: 100%; height: auto;" autoplay muted playsinline></video>
+            <p class="modal-subtitle">Pide al capitán que abra el QR de su equipo y apunta la cámara aquí.</p>
+            <div class="qr-video-container">
+              <video id="qr-team-video" autoplay muted playsinline></video>
             </div>
-            <div class="modal-actions" style="text-align: right;">
+            <div class="modal-actions form-flex--end">
               <button type="button" id="dyn-scan-team-cancel" class="btn btn--secondary">Cancelar</button>
             </div>
           </div>

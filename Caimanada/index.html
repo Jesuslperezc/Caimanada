@@ -13,7 +13,11 @@
   <link rel="stylesheet" href="./css/main.css">
   <link rel="stylesheet" href="./css/components.css">
   <link rel="stylesheet" href="./css/views.css">
+  <link rel="stylesheet" href="./css/buttons.css">
+  <link rel="stylesheet" href="./css/keyframes.css">
+  <link rel="stylesheet" href="./css/modal.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 </head>
 <body>
   <!-- ENCABEZADO Y NAVEGACIÓN SUPERIOR -->
@@ -39,6 +43,10 @@
           </li>
           <li class="nav-desktop__item">
             <a href="#matches" class="nav-desktop__link" id="nav-desktop-matches">Partidos</a>
+          </li>
+
+          <li class="nav-desktop__item">
+            <a href="#help" class="nav-desktop__link" id="nav-desktop-help">Ayuda</a>
           </li>
         </ul>
       </nav>
@@ -214,7 +222,17 @@
       <div id="match-stats-container"></div>
     </section>
 
+        <!-- Vista: Ayuda -->
+    <section class="view-section is-hidden" id="help-section" aria-labelledby="help-title">
+      <header class="view-section__header">
+        <h1 class="view-section__title" id="help-title">Centro de Ayuda </h1>
+      </header>
+      <div id="help-content-target"></div>
+    </section>
+
   </main>
+
+ 
 
 
 <!-- NAVEGACION INFERIOR MOVIL -->
@@ -283,13 +301,20 @@
       </a>
     </li>
 
-  </ul>
+    <li class="nav-mobile__item">
+      <a href="#help" class="nav-mobile__link" id="nav-mobile-help">
+        <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span class="nav-mobile__label">Ayuda</span>
+      </a>
+    </li>
 </nav>
 
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script type="module" src="./js/app.js"></script>
   
-  <!-- SE ELIMINARON LOS CONSOLE.LOG AQUÍ -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

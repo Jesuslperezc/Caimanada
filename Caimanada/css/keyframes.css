@@ -1,0 +1,77 @@
+/* ====================================================================
+   ANIMACIONES Y KEYFRAMES
+   ==================================================================== */
+@keyframes caimanBreathing {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.04;
+    filter: drop-shadow(0 0 20px rgba(0, 255, 157, 0.2));
+  }
+  50% {
+    transform: scale(1.08) rotate(0.5deg); /* Crece un poquito y rota milimétricamente */
+    opacity: 0.08; /* Aumenta la visibilidad */
+    filter: drop-shadow(0 0 60px rgba(0, 255, 157, 0.6)); /* El brillo neón se intensifica */
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.04;
+    filter: drop-shadow(0 0 20px rgba(0, 255, 157, 0.2));
+  }
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cmdPopIn {
+  from { opacity: 0; transform: translateY(1.25rem) scale(0.92); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cmdPopOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateX(1.875rem) scale(0.95); }
+}
+
+@keyframes profileFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes profileCardSlide {
+  from { transform: translateY(2rem); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes profileCardSlideMobile {
+  from { transform: translateY(2rem); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes profileSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes activeLeaguePulse { 
+  0%, 100% { box-shadow: 0 0 0.5rem rgba(0, 255, 157, 0.15); } 
+  50% { box-shadow: 0 0 1.125rem rgba(0, 255, 157, 0.35); } 
+}
+
+@keyframes authFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes authGlowPulse { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; } 50% { transform: scale(1.1) rotate(3deg); opacity: 1; } }
+
+@keyframes authCardSlide { from { transform: translateY(3rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@keyframes authGlowLine { 0%, 100% { opacity: 0.3; transform: scaleX(1); } 50% { opacity: 1; transform: scaleX(1.2); } }
+
+@keyframes authRingPulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.05); opacity: 1; } }
+
+@keyframes authSpin { to { transform: rotate(360deg); } }
+
+@keyframes authErrorShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-0.5rem); } 75% { transform: translateX(0.5rem); } }
+
+@keyframes tutorialPulse { 0%, 100% { outline-color: var(--accent-primary); box-shadow: 0 0 0.625rem rgba(0, 255, 157, 0.1); } 50% { outline-color: var(--accent-secondary); box-shadow: 0 0 1.875rem rgba(0, 255, 157, 0.2); } }
+
+@keyframes tutorialTooltipFade { from { opacity: 0; transform: translateY(0.5rem) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }

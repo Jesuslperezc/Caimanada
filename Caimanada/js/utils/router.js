@@ -2,22 +2,22 @@ import { renderLeaguesView } from '../views/leagues.js';
 import { renderTeamsView } from '../views/teams.js';
 import { renderMatchesView } from '../views/matches.js';
 import { renderDashboardView } from '../views/dashboard.js'; 
-
+import { renderHelpView } from '../views/help.js';
 
 // Función auxiliar para bloquear el selector de deporte en la vista de partidos
 function updateSportSelectorLock(isMatchesView) {
   const selector = document.getElementById('active-sport-selector');
+  const badgeContainer = document.getElementById('active-sport-badge'); // Capturamos el contenedor visual
+  
   if (!selector) return;
 
   if (isMatchesView) {
     selector.disabled = true;
-    selector.style.opacity = '0.6';
-    selector.style.cursor = 'not-allowed';
+    if (badgeContainer) badgeContainer.classList.add('is-locked'); // Bloqueo visual del custom dropdown
     selector.title = 'El deporte está bloqueado mientras ves los Partidos de la liga activa.';
   } else {
     selector.disabled = false;
-    selector.style.opacity = '1';
-    selector.style.cursor = 'pointer';
+    if (badgeContainer) badgeContainer.classList.remove('is-locked'); // Desbloqueo visual
     selector.title = 'Seleccionar deporte';
   }
 }
@@ -59,8 +59,10 @@ export function handleRoute() {
     renderTeamsView().catch(err => console.error('Error renderizando equipos:', err));
   } else if (cleanName === 'matches') { 
     renderMatchesView().catch(err => console.error('Error renderizando partidos:', err));
-  } else if (cleanName === 'dashboard') { // <--- NUEVA CONDICIÓN
+  } else if (cleanName === 'dashboard') {
     renderDashboardView().catch(err => console.error('Error renderizando dashboard:', err));
+  } else if (cleanName === 'help') {
+    renderHelpView().catch(err => console.error('Error renderizando ayuda:', err));
   }
 }
 

@@ -38,6 +38,7 @@
   /* Tipografía */
   --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
+
 /* ====================================================================
    2. RESET Y GLOBALES (CON FONDO CAIMÁN BESTIAL)
    ==================================================================== */
@@ -94,23 +95,6 @@ body::after {
   animation: caimanBreathing 12s ease-in-out infinite;
 }
 
-@keyframes caimanBreathing {
-  0% {
-    transform: scale(1) rotate(0deg);
-    opacity: 0.04;
-    filter: drop-shadow(0 0 20px rgba(0, 255, 157, 0.2));
-  }
-  50% {
-    transform: scale(1.08) rotate(0.5deg); /* Crece un poquito y rota milimétricamente */
-    opacity: 0.08; /* Aumenta la visibilidad */
-    filter: drop-shadow(0 0 60px rgba(0, 255, 157, 0.6)); /* El brillo neón se intensifica */
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 0.04;
-    filter: drop-shadow(0 0 20px rgba(0, 255, 157, 0.2));
-  }
-}
 /* ====================================================================
    3. LAYOUT PRINCIPAL Y VISTAS
    ==================================================================== */
@@ -161,43 +145,6 @@ body::after {
   font-size: 0.85rem; /* Reducido de 0.95rem a 0.85rem */
   color: var(--text-secondary);
   font-weight: 500;
-}
-/* ====================================================================
-   4. COMPONENTES UI (Botones y Forms)
-   ==================================================================== */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.8rem 1.75rem;
-  font-size: 0.85rem;
-  font-weight: 800;
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn--primary {
-  background-color: var(--accent-primary);
-  color: #000000;
-  box-shadow: 0 0 0 1px var(--accent-primary), 0 4px 15px var(--accent-glow);
-}
-
-.btn--primary:hover {
-  background-color: transparent;
-  color: var(--accent-primary);
-  box-shadow: 0 0 0 1px var(--accent-primary), 0 0 20px var(--accent-glow);
-  transform: translateY(-2px);
-}
-
-.btn--primary:active {
-  transform: translateY(0);
 }
 
 /* Watermark */
