@@ -291,3 +291,24 @@
 .help-section-title { color: var(--accent-primary, #00A86B); margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1rem; font-weight: 700; }
 .help-list { margin-left: 1.5rem; margin-bottom: 1rem; list-style: disc; }
 .help-list li { margin-bottom: 0.5rem; }
+
+/* === MODAL: RECORTADOR DE IMAGEN (CROPPIE) === */
+#cropper-modal .modal-card { max-width: 400px; text-align: center; }
+#croppie-container { 
+  width: 250px; 
+  height: 250px; 
+  margin: 0 auto 1.5rem auto; 
+  background: #000; 
+  border-radius: 12px; /* Cuadrado con bordes redondeados, Croppie se encarga del círculo interno */
+  overflow: hidden; 
+}
+/* Oscurecer el fondo de Croppie y adaptarlo al tema */
+.croppie-container .cr-boundary { background-color: #02110A !important; }
+.croppie-container .cr-viewport { 
+  border: 2px solid var(--accent-primary) !important; 
+  box-shadow: 0 0 15px var(--accent-glow) !important; 
+}
+/* Estilizar el slider de zoom de Croppie para que no sea gris feo */
+.croppie-container .cr-slider {
+  filter: invert(1) hue-rotate(50deg) saturate(5) brightness(1.2);
+}

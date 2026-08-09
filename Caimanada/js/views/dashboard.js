@@ -187,7 +187,7 @@ export async function renderDashboardView() {
           </div>
           <div class="bracket-arrow">➜</div>
           <div class="bracket-winner">
-            <p class="bracket-champ-label">👑 CAMPEÓN</p>
+            <p class="bracket-champ-label"><i class="fa-solid fa-crown"></i> CAMPEÓN</p>
             <p class="bracket-champ-name">${winnerName}</p>
           </div>
         `;

@@ -1,5 +1,6 @@
 import { getCurrentUser, updateUserProfile, fullLogout } from '../utils/session.js';
 import { AlertService } from './alert.js';
+import { openImageCropper } from './imageCropper.js';
 
 export function initNavbar() {
   const mobileLinks = document.querySelectorAll('.nav-mobile__link');
@@ -55,7 +56,6 @@ export function renderUserAvatar() {
         userAvatar.alt = user.name;
       } else {
         const initial = user.name.charAt(0).toUpperCase();
-        // Actualizado al nuevo verde neón (#00ff9d) y fondo oscuro
         const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23102420'/><text x='50%' y='55%' font-family='system-ui' font-size='18' font-weight='bold' fill='%2300ff9d' text-anchor='middle' dominant-baseline='middle'>${initial}</text></svg>`;
         userAvatar.src = `data:image/svg+xml;utf8,${svg}`;
       }
@@ -69,16 +69,15 @@ function openProfileModal() {
   document.getElementById('dynamic-profile-modal')?.remove();
   const user = getCurrentUser();
 
-  // HTML limpio usando las clases de nuestro sistema de diseño, sin estilos inline
   const modalHTML = `
     <div id="dynamic-profile-modal" class="modal-overlay">
-      <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-card modal-card--form">
         <h2 class="modal-card__title">Mi Perfil</h2>
         
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem;">
-          <label for="profile-img-input" class="auth-avatar-wrapper" id="profile-avatar-label" style="width: 100px; height: 100px; margin-bottom: 0;">
+          <label for="profile-img-input" class="auth-avatar-wrapper" id="profile-avatar-label" style="width: 100px; height: 100px; margin-bottom: 0; cursor: pointer;">
             ${user.img ? `<img src="${user.img}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : `<span class="auth-avatar__placeholder">Cambiar</span>`}
-            <div class="auth-avatar__edit">✎</div>
+            <!-- EL LÁPIZ HA SIDO ELIMINADO -->
           </label>
           <input type="file" id="profile-img-input" accept="image/*" class="is-hidden">
         </div>
@@ -89,13 +88,13 @@ function openProfileModal() {
             <input type="text" id="profile-name" class="form-control" value="${user.name}" required>
           </div>
 
-          <div class="form-grid-2" style="margin-top: 1.5rem; gap: 0.75rem;">
+          <div class="modal-actions">
+            <button type="button" id="dyn-profile-cancel" class="btn btn--secondary">Cancelar</button>
             <button type="submit" class="btn btn--primary">Guardar</button>
-            <button type="button" id="dyn-profile-cancel" class="btn btn--primary" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--border-card); box-shadow: none;">Cancelar</button>
           </div>
           
-          <div style="margin-top: 1rem;">
-            <button type="button" id="btn-logout" class="btn btn-danger" style="width: 100%;">Cerrar Sesión y Borrar Datos</button>
+          <div style="margin-top: 1.5rem;">
+            <button type="button" id="btn-logout" class="btn btn--danger" style="width: 100%;">Cerrar Sesión y Borrar Datos</button>
           </div>
         </form>
       </div>
@@ -111,14 +110,23 @@ function openProfileModal() {
 
   imgInput.onchange = (e) => {
     const file = e.target.files[0];
+    e.target.value = ''; 
+    
     if (file) {
+      console.log('Foto seleccionada:', file.name);
       const reader = new FileReader();
       reader.onload = (ev) => {
-        newImageBase64 = ev.target.result;
-        avatarLabel.innerHTML = `
-          <img src="${newImageBase64}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
-          <div class="auth-avatar__edit">✎</div>
-        `;
+        console.log('Imagen leída, abriendo recortador...');
+        openImageCropper(ev.target.result, (croppedImage) => {
+          newImageBase64 = croppedImage;
+          avatarLabel.innerHTML = `
+            <img src="${newImageBase64}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+          `;
+        });
+      };
+      reader.onerror = (err) => {
+        console.error('Error al leer el archivo:', err);
+        AlertService.showError('No se pudo leer el archivo de imagen.');
       };
       reader.readAsDataURL(file);
     }
@@ -146,9 +154,8 @@ function openProfileModal() {
     }
   };
 
-   document.getElementById('btn-logout').onclick = async () => {
+  document.getElementById('btn-logout').onclick = async () => {
     const wasLoggedOut = await fullLogout();
-    
     if (wasLoggedOut) {
       AlertService.showWarning('Cerrando sesión y borrando base de datos local...', 'ADIOS');
       setTimeout(() => window.location.reload(), 1000);

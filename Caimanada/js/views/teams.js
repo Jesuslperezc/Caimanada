@@ -100,9 +100,9 @@ export async function renderTeamsView() {
               </div>
               <footer class="info-card__footer">
                 <button class="btn btn--secondary btn--sm btn-view-roster" data-id="${safeId}" data-name="${safeName}">Plantilla</button>
-                <button class="btn btn--primary btn--sm btn-add-player" data-id="${safeId}" data-name="${safeName}">+ Jugador</button>
-                <button class="btn btn--secondary btn--sm btn-share-team" data-id="${safeId}" data-name="${safeName}">Compartir QR</button>
-                <button class="btn btn--danger btn--sm btn-delete-team" data-id="${safeId}" data-name="${safeName}">Eliminar</button>
+                <button class="btn btn--primary btn--sm btn-add-player" data-id="${safeId}" data-name="${safeName}"><i class="fa-solid fa-user-plus"></i> Jugador</button>
+                <button class="btn btn--secondary btn--sm btn-share-team" data-id="${safeId}" data-name="${safeName}"><i class="fa-solid fa-qrcode"></i> Compartir QR</button>
+                <button class="btn btn--danger btn--sm btn-delete-team" data-id="${safeId}" data-name="${safeName}"><i class="fa-solid fa-trash"></i> Eliminar</button>
               </footer>
             </article>`;
         }).join('')}
@@ -363,7 +363,7 @@ export async function setupScanTeamButton() {
     scanBtn = document.createElement('button');
     scanBtn.id = 'btn-scan-team';
     scanBtn.className = 'btn btn--secondary';
-    scanBtn.innerHTML = 'Escanear Equipo';
+        scanBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Escanear Equipo';
     addBtn.parentNode.insertBefore(scanBtn, addBtn.nextSibling);
   }
   if (scanBtn) {

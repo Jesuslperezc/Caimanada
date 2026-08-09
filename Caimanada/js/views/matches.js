@@ -27,7 +27,7 @@ function showConfirmDialog(messageHTML, onConfirmCallback) {
         <p class="modal-subtitle">${messageHTML}</p>
         <div class="modal-actions">
           <button type="button" id="dyn-confirm-cancel" class="btn btn--secondary">Cancelar</button>
-          <button type="button" id="dyn-confirm-accept" class="btn btn--danger">Sí, Eliminar</button>
+          <button type="button" id="dyn-confirm-accept" class="btn btn--danger"><i class="fa-solid fa-trash"></i> Sí, Eliminar</button>
         </div>
       </div>
     </div>`;
@@ -133,11 +133,11 @@ function renderMatchesList(matches, teamsMap, league) {
     return `
       <article class="match-card">
         <div class="match-card__header">
-          <div class="match-card__date"><span>${dateFormatted}</span><span>🕐 ${timeFormatted}</span></div>
+          <div class="match-card__date"><span>${dateFormatted}</span><span><i class="fa-solid fa-clock"></i> ${timeFormatted}</span></div>
           <div class="match-card__actions">
-            ${isPending && !isTBD ? `<button class="btn btn--secondary btn--sm btn-edit-match" data-id="${match.id}" title="Editar fecha">✏️</button><button class="btn btn--danger btn--sm btn-delete-match" data-id="${match.id}" title="Eliminar partido">🗑️</button>` : ''}
-            ${isCompleted ? '<span class="match-status--finished">FINALIZADO</span>' : ''}
-            ${isTBD ? '<span class="match-status--locked">BLOQUEADO</span>' : ''}
+            ${isPending && !isTBD ? `<button class="btn btn--secondary btn--sm btn-edit-match" data-id="${match.id}" title="Editar fecha"><i class="fa-solid fa-pen"></i></button><button class="btn btn--danger btn--sm btn-delete-match" data-id="${match.id}" title="Eliminar partido"><i class="fa-solid fa-trash"></i></button>` : ''}
+            ${isCompleted ? '<span class="match-status--finished"><i class="fa-solid fa-flag-checkered"></i> FINALIZADO</span>' : ''}
+            ${isTBD ? '<span class="match-status--locked"><i class="fa-solid fa-lock"></i> BLOQUEADO</span>' : ''}
           </div>
         </div>
         <div class="match-card__body">
@@ -204,20 +204,20 @@ window.openLiveMatch = async function(matchId, leagueId, sportId) {
     const minRequired = Math.min(sportLimit, 2); 
     if (homePlayers.length < minRequired || awayPlayers.length < minRequired) { AlertService.showError(`Cada equipo debe tener al menos ${minRequired} jugadores.`); return; }
 
-    const scoringButtonsHTML = sportConfig.scoringOptions.map(opt => `<button class="btn btn--primary" onclick="window.addLiveEvent('point', ${opt.value})">⭐ ${opt.label}</button>`).join('');
+    const scoringButtonsHTML = sportConfig.scoringOptions.map(opt => `<button class="btn btn--primary" onclick="window.addLiveEvent('point', ${opt.value})"><i class="fa-solid fa-star"></i> ${opt.label}</button>`).join('');
     const extraButtonsHTML = (sportConfig.extraButtons || []).map(opt => `<button class="btn btn--secondary" onclick="window.addLiveEvent('${opt.type}', ${opt.value})">${opt.label}</button>`).join('');
     
     let cardsButtonsHTML = '';
     if (sportConfig.hasCards === true) {
       cardsButtonsHTML = `
-      <button class="btn btn--secondary" onclick="window.addLiveEvent('warning')">🟨 Amarilla</button>
-      <button class="btn btn--danger" onclick="window.addLiveEvent('expulsion')">🟥 Roja Directa</button>`;
+      <button class="btn btn--secondary" onclick="window.addLiveEvent('warning')"><i class="fa-solid fa-square" style="color: #eab308;"></i> Amarilla</button>
+      <button class="btn btn--danger" onclick="window.addLiveEvent('expulsion')"><i class="fa-solid fa-square" style="color: #ef4444;"></i> Roja Directa</button>`;
     } else if (sportConfig.hasCards === 'volleyball') {
       cardsButtonsHTML = `
-      <button class="btn btn--secondary" onclick="window.addLiveEvent('warning')">🟨 Amarilla</button>
-      <button class="btn btn--danger" onclick="window.addLiveEvent('volleyball_red')">🟥 Roja</button>
-      <button class="btn btn--danger" style="background: #a855f7;" onclick="window.addLiveEvent('volleyball_set_expulsion')">⛔ Expulsión Set</button>
-      <button class="btn btn--danger" style="background: #000; border: 1px solid #ef4444;" onclick="window.addLiveEvent('volleyball_disqualification')">🚫 Descalificación</button>`;
+      <button class="btn btn--secondary" onclick="window.addLiveEvent('warning')"><i class="fa-solid fa-square" style="color: #eab308;"></i> Amarilla</button>
+      <button class="btn btn--danger" onclick="window.addLiveEvent('volleyball_red')"><i class="fa-solid fa-square" style="color: #ef4444;"></i> Roja</button>
+      <button class="btn btn--danger" style="background: #a855f7;" onclick="window.addLiveEvent('volleyball_set_expulsion')"><i class="fa-solid fa-ban"></i> Expulsión Set</button>
+      <button class="btn btn--danger" style="background: #000; border: 1px solid #ef4444;" onclick="window.addLiveEvent('volleyball_disqualification')"><i class="fa-solid fa-circle-xmark"></i> Descalificación</button>`;
     }
 
     document.body.insertAdjacentHTML('beforeend', `
@@ -237,13 +237,13 @@ window.openLiveMatch = async function(matchId, leagueId, sportId) {
           </div>
           <div class="live-clock-container">
             <div id="live-clock" class="live-clock">00:00</div>
-            ${!sportConfig.hasClock ? '<div class="live-clock-hint">⏱ Tiempo cronometrado</div>' : ''}
+            ${!sportConfig.hasClock ? '<div class="live-clock-hint"><i class="fa-solid fa-stopwatch"></i> Tiempo cronometrado</div>' : ''}
           </div>
           <div class="live-controls">
-            <button id="btn-play-pause" class="btn btn--primary" onclick="window.togglePlayPause()">▶ Iniciar</button>
-            <button id="btn-next-period" class="btn btn--secondary" onclick="window.nextPeriod()" style="${sportConfig.hideNextPeriodBtn ? 'display:none;' : ''}">⏭ ${sportConfig.hasClock ? 'Descanso' : 'Siguiente Periodo'}</button>
-            <button id="btn-skip-break" class="btn btn--primary is-hidden" style="background: #3b82f6;" onclick="window.skipBreak()"> Saltar Descanso</button>
-            <button class="btn btn--danger" onclick="window.finishLiveMatch('${matchId}', '${leagueId}')"> Finalizar</button>
+            <button id="btn-play-pause" class="btn btn--primary" onclick="window.togglePlayPause()"><i class="fa-solid fa-play"></i> Iniciar</button>
+            <button id="btn-next-period" class="btn btn--secondary" onclick="window.nextPeriod()" style="${sportConfig.hideNextPeriodBtn ? 'display:none;' : ''}"><i class="fa-solid fa-forward"></i> ${sportConfig.hasClock ? 'Descanso' : 'Siguiente Periodo'}</button>
+            <button id="btn-skip-break" class="btn btn--primary is-hidden" style="background: #3b82f6;" onclick="window.skipBreak()"><i class="fa-solid fa-forward"></i> Saltar Descanso</button>
+            <button class="btn btn--danger" onclick="window.finishLiveMatch('${matchId}', '${leagueId}')"><i class="fa-solid fa-flag-checkered"></i> Finalizar</button>
           </div>
           <div id="live-modal__events-panel" class="live-events-panel">
             <h3>Registrar Evento</h3>
@@ -456,7 +456,7 @@ function updateClockUI(state) {
 
 function updatePlayPauseBtn() {
   const b = document.getElementById('btn-play-pause'); if (!b || !activeChronometer) return;
-  b.textContent = activeChronometer.isRunning ? '⏸ Pausar' : '▶ Iniciar';
+  b.innerHTML = activeChronometer.isRunning ? '<i class="fa-solid fa-pause"></i> Pausar' : '<i class="fa-solid fa-play"></i> Iniciar';
   b.classList.toggle('btn--running', activeChronometer.isRunning);
 }
 
@@ -464,18 +464,18 @@ function renderEventsLog() {
   const l = document.getElementById('live-events-log');
   if (liveMatchEvents.length === 0) { l.innerHTML = `<p class="modal-subtitle">Sin eventos aún</p>`; return; }
   l.innerHTML = liveMatchEvents.slice().reverse().map(e => { 
-    let text = '', icon = '⭐', color = '#10b981';
+    let text = '', icon = '<i class="fa-solid fa-star"></i>', color = '#10b981';
     if (e.type === 'point') { text = `${e.pointsValue > 1 ? `(+${e.pointsValue})` : ''} #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-    else if (e.type === 'warning') { icon = '🟨'; color = '#eab308'; text = `Amarilla #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-    else if (e.type === 'expulsion') { icon = '🟥'; color = '#ef4444'; text = `Roja #${e.playerNumber} ${escapeHTML(e.playerName)} (SANCIONADO)`; }
-    else if (e.type === 'substitution') { icon = '🔄'; color = '#3b82f6'; text = `Entra #${e.playerNumber} ${escapeHTML(e.playerName)} por #${e.outPlayerNumber} ${escapeHTML(e.outPlayerName)}`; }
-    else if (e.type === 'out') { icon = '⛔'; color = '#94a3b8'; text = `Out (${escapeHTML(e.playerName)})`; }
-    else if (e.type === 'strike') { icon = '⚡'; color = '#f59e0b'; text = `Strike (${escapeHTML(e.playerName)})`; }
-    else if (e.type === 'foul') { icon = '🟠'; color = '#fb923c'; text = `Foul (${escapeHTML(e.playerName)})`; }
-    else if (e.type === 'volleyball_red') { icon = '🟥'; color = '#ef4444'; text = `Roja Directa #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-    else if (e.type === 'volleyball_set_expulsion') { icon = '⛔'; color = '#a855f7'; text = `Expulsión del Set #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-    else if (e.type === 'volleyball_disqualification') { icon = '🚫'; color = '#000'; text = `Descalificación #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-    else if (e.type === 'game_milestone') { icon = '🏆'; color = '#fbbf24'; text = `¡Juego!`; }
+    else if (e.type === 'warning') { icon = '<i class="fa-solid fa-square" style="color: #eab308;"></i>'; color = '#eab308'; text = `Amarilla #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+    else if (e.type === 'expulsion') { icon = '<i class="fa-solid fa-square" style="color: #ef4444;"></i>'; color = '#ef4444'; text = `Roja #${e.playerNumber} ${escapeHTML(e.playerName)} (SANCIONADO)`; }
+    else if (e.type === 'substitution') { icon = '<i class="fa-solid fa-arrows-rotate"></i>'; color = '#3b82f6'; text = `Entra #${e.playerNumber} ${escapeHTML(e.playerName)} por #${e.outPlayerNumber} ${escapeHTML(e.outPlayerName)}`; }
+    else if (e.type === 'out') { icon = '<i class="fa-solid fa-ban"></i>'; color = '#94a3b8'; text = `Out (${escapeHTML(e.playerName)})`; }
+    else if (e.type === 'strike') { icon = '<i class="fa-solid fa-bolt"></i>'; color = '#f59e0b'; text = `Strike (${escapeHTML(e.playerName)})`; }
+    else if (e.type === 'foul') { icon = '<i class="fa-solid fa-circle" style="color: #fb923c;"></i>'; color = '#fb923c'; text = `Foul (${escapeHTML(e.playerName)})`; }
+    else if (e.type === 'volleyball_red') { icon = '<i class="fa-solid fa-square" style="color: #ef4444;"></i>'; color = '#ef4444'; text = `Roja Directa #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+    else if (e.type === 'volleyball_set_expulsion') { icon = '<i class="fa-solid fa-ban" style="color: #a855f7;"></i>'; color = '#a855f7'; text = `Expulsión del Set #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+    else if (e.type === 'volleyball_disqualification') { icon = '<i class="fa-solid fa-circle-xmark"></i>'; color = '#000'; text = `Descalificación #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+    else if (e.type === 'game_milestone') { icon = '<i class="fa-solid fa-trophy"></i>'; color = '#fbbf24'; text = `¡Juego!`; }
     return `<div class="live-log-item" style="color: ${color};"><span>${icon} ${text}</span><span class="live-log-time">${e.minute}</span></div>`;
   }).join('');
 }
@@ -593,18 +593,18 @@ window.showMatchSummary = async function(matchId) {
     const renderEventList = (evts) => {
       if (evts.length === 0) return '<p class="modal-subtitle">Sin eventos registrados</p>';
       return evts.map(e => {
-        let text = '', icon = '⭐', color = '#10b981';
+        let text = '', icon = '<i class="fa-solid fa-star"></i>', color = '#10b981';
         if (e.type === 'point') { text = `+${e.pointsValue > 1 ? e.pointsValue + 'pts ' : ''} #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'warning') { icon = '🟨'; color = '#eab30852'; text = `Amarilla #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'expulsion') { icon = '🟥'; color = '#ef44446b'; text = `Roja #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'substitution') { icon = '🔄'; color = '#3b83f65e'; text = `Entra #${e.playerNumber} ${escapeHTML(e.playerName)} por #${e.outPlayerNumber} ${escapeHTML(e.outPlayerName)}`; }
-        else if (e.type === 'out') { icon = '⛔'; color = '#94a3b88f'; text = `Out (${escapeHTML(e.playerName)})`; }
-        else if (e.type === 'strike') { icon = '⚡'; color = '#f59f0b54'; text = `Strike (${escapeHTML(e.playerName)})`; }
-        else if (e.type === 'foul') { icon = '🟠'; color = '#fb923c91'; text = `Foul (${escapeHTML(e.playerName)})`; }
-        else if (e.type === 'volleyball_red') { icon = '🟥'; color = '#ef444481'; text = `Roja Directa #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'volleyball_set_expulsion') { icon = '⛔'; color = '#a955f77e'; text = `Expulsión Set #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'volleyball_disqualification') { icon = '🚫'; color = '#000'; text = `Descalificación #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
-        else if (e.type === 'game_milestone') { icon = '🏆'; color = '#fbbf24'; text = `¡Juego!`; }
+        else if (e.type === 'warning') { icon = '<i class="fa-solid fa-square" style="color: #eab30852;"></i>'; color = '#eab30852'; text = `Amarilla #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+        else if (e.type === 'expulsion') { icon = '<i class="fa-solid fa-square" style="color: #ef44446b;"></i>'; color = '#ef44446b'; text = `Roja #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+        else if (e.type === 'substitution') { icon = '<i class="fa-solid fa-arrows-rotate" style="color: #3b83f65e;"></i>'; color = '#3b83f65e'; text = `Entra #${e.playerNumber} ${escapeHTML(e.playerName)} por #${e.outPlayerNumber} ${escapeHTML(e.outPlayerName)}`; }
+        else if (e.type === 'out') { icon = '<i class="fa-solid fa-ban" style="color: #94a3b88f;"></i>'; color = '#94a3b88f'; text = `Out (${escapeHTML(e.playerName)})`; }
+        else if (e.type === 'strike') { icon = '<i class="fa-solid fa-bolt" style="color: #f59f0b54;"></i>'; color = '#f59f0b54'; text = `Strike (${escapeHTML(e.playerName)})`; }
+        else if (e.type === 'foul') { icon = '<i class="fa-solid fa-circle" style="color: #fb923c91;"></i>'; color = '#fb923c91'; text = `Foul (${escapeHTML(e.playerName)})`; }
+        else if (e.type === 'volleyball_red') { icon = '<i class="fa-solid fa-square" style="color: #ef444481;"></i>'; color = '#ef444481'; text = `Roja Directa #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+        else if (e.type === 'volleyball_set_expulsion') { icon = '<i class="fa-solid fa-ban" style="color: #a955f77e;"></i>'; color = '#a955f77e'; text = `Expulsión Set #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+        else if (e.type === 'volleyball_disqualification') { icon = '<i class="fa-solid fa-circle-xmark"></i>'; color = '#000'; text = `Descalificación #${e.playerNumber} ${escapeHTML(e.playerName)}`; }
+        else if (e.type === 'game_milestone') { icon = '<i class="fa-solid fa-trophy"></i>'; color = '#fbbf24'; text = `¡Juego!`; }
         return `<div class="summary-event-item" style="color: ${color};"><span>${icon} ${text}</span><span class="summary-event-time">${e.minute}</span></div>`;
       }).join('');
     };

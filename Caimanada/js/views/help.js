@@ -1,4 +1,4 @@
-import { AlertService } from '../components/alert.js'; // Asegúrate de que la ruta sea correcta
+import { AlertService } from '../components/alert.js';
 
 export async function renderHelpView() {
   const container = document.getElementById('help-content-target');
@@ -19,9 +19,9 @@ export async function renderHelpView() {
         <h3 class="help-section-title">4. Sincronización P2P (Sin Internet)</h3>
         <p>CaimanaDa no usa internet para guardar datos, sino códigos QR:</p>
         <ul class="help-list">
-          <li><strong>Organizador (Host):</strong> Presiona "📤 Exportar" en su liga para generar el QR inicial.</li>
-          <li><strong>Invitado (Guest):</strong> Presiona "📥 Importar Liga" y escanea el QR del organizador.</li>
-          <li><strong>Actualizar Resultados:</strong> Tras jugar partidos, el Host presiona "📤 Sync" y el Guest escanea ese QR en "🔄 Actualizar".</li>
+          <li><strong>Organizador (Host):</strong> Presiona "<i class="fa-solid fa-cloud-arrow-up"></i> Exportar" en su liga para generar el QR inicial.</li>
+          <li><strong>Invitado (Guest):</strong> Presiona "<i class="fa-solid fa-cloud-arrow-down"></i> Importar Liga" y escanea el QR del organizador.</li>
+          <li><strong>Actualizar Resultados:</strong> Tras jugar partidos, el Host presiona "<i class="fa-solid fa-cloud-arrow-up"></i> Sync" y el Guest escanea ese QR en "<i class="fa-solid fa-arrows-rotate"></i> Actualizar".</li>
         </ul>
         
         <h3 class="help-section-title">5. Jugar Partidos en Vivo</h3>
@@ -33,10 +33,10 @@ export async function renderHelpView() {
         
         <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center;">
           <button type="button" id="contact-support-btn" class="btn btn--primary" style="max-width: 300px; width: 100%;">
-            📧 Enviar Correo
+            <i class="fa-solid fa-envelope"></i> Enviar Correo
           </button>
           <button type="button" id="copy-email-btn" class="btn btn--secondary" style="max-width: 300px; width: 100%;">
-            📋 Copiar Correo
+            <i class="fa-solid fa-clipboard"></i> Copiar Correo
           </button>
           <p style="color: var(--text-secondary); font-size: 0.9rem; font-weight: bold; margin-top: 0.5rem;">caimanada.app@gmail.com</p>
         </div>

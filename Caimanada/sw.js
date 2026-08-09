@@ -6,10 +6,11 @@ const urlsToCache = [
   './css/components.css',
   './css/views.css',
   './js/app.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-solid-900.woff2', // Fuente de los iconos
   'https://cdn.jsdelivr.net/npm/chart.js',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'
 ];
-
 // Instalación: Guardamos todo en caché
 self.addEventListener('install', e => {
   e.waitUntil(
