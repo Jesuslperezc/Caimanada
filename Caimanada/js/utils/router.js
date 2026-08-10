@@ -3,6 +3,7 @@ import { renderTeamsView } from '../views/teams.js';
 import { renderMatchesView } from '../views/matches.js';
 import { renderDashboardView } from '../views/dashboard.js'; 
 import { renderHelpView } from '../views/help.js';
+import { renderFlashView } from '../views/flash.js'; // <--- NUEVO IMPORT
 
 // Función auxiliar para bloquear el selector de deporte en la vista de partidos
 function updateSportSelectorLock(isMatchesView) {
@@ -63,6 +64,8 @@ export function handleRoute() {
     renderDashboardView().catch(err => console.error('Error renderizando dashboard:', err));
   } else if (cleanName === 'help') {
     renderHelpView().catch(err => console.error('Error renderizando ayuda:', err));
+  } else if (cleanName === 'flash') { // <--- NUEVA CONDICIÓN
+    renderFlashView().catch(err => console.error('Error renderizando flash:', err));
   }
 }
 

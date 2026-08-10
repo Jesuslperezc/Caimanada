@@ -39,6 +39,9 @@
             <a href="#dashboard" class="nav-desktop__link nav-desktop__link--active" id="nav-desktop-dashboard">Inicio</a>
           </li>
           <li class="nav-desktop__item">
+            <a href="#flash" class="nav-desktop__link" id="nav-desktop-flash"> Caimana Flash</a>
+          </li>
+          <li class="nav-desktop__item">
             <a href="#leagues" class="nav-desktop__link" id="nav-desktop-leagues">Ligas</a>
           </li>
           <li class="nav-desktop__item">
@@ -47,7 +50,6 @@
           <li class="nav-desktop__item">
             <a href="#matches" class="nav-desktop__link" id="nav-desktop-matches">Partidos</a>
           </li>
-
           <li class="nav-desktop__item">
             <a href="#help" class="nav-desktop__link" id="nav-desktop-help">Ayuda</a>
           </li>
@@ -86,20 +88,28 @@
         <!-- Estado por defecto: Si no hay liga activa -->
         <div class="empty-league-state" id="empty-league-container">
           <h1 class="view-section__title" id="active-league-title">No hay ninguna liga activa</h1>
-          <p class="view-section__subtitle" id="active-league-mode">Crea tu primera liga para comenzar a gestionar equipos, partidos y estadísticas.</p>
-          <a href="#leagues" class="btn btn--primary" id="btn-create-league">
-            Crear una liga
-          </a>
+          <p class="view-section__subtitle" id="active-league-mode">Crea un torneo formal o inicia una sesión rápida.</p>
+          
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 400px; margin-top: 1rem;">
+            <a href="#leagues" class="btn btn--primary" style="flex: 1; min-width: 180px;">
+              <i class="fa-solid fa-trophy"></i> Crear Liga
+            </a>
+            <a href="#flash" class="btn-flash-cta" style="flex: 1; min-width: 180px;">
+              <i class="fa-solid fa-bolt"></i> Caimana Flash
+            </a>
+          </div>
         </div>
 
         <!-- Estado de Liga Activa -->
         <div id="active-league-info" style="display: none; width: 100%;">
           
-          <!-- SE CORRIGIÓ EL DIV FALTANTE AQUÍ -->
-          <div class="dashboard-titles" style="margin-bottom: 2rem;">
-            <h1 class="view-section__title" id="dash-league-name" style="margin-bottom: 0.25rem;"></h1>
-            <p class="view-section__subtitle" id="dash-league-mode" style="margin: 0;"></p>
-          </div>
+          <div class="dashboard-titles" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+            <div>
+              <h1 class="view-section__title" id="dash-league-name" style="margin-bottom: 0.25rem;"></h1>
+              <p class="view-section__subtitle" id="dash-league-mode" style="margin: 0;"></p>
+            </div>
+              <a href="#flash" class="btn-flash-cta"><i class="fa-solid fa-bolt"></i> Iniciar Caimana Flash</a>
+            </div>
 
           <div class="dashboard-view__grid">
             <!-- Próximo Partido (Contextualizado) -->
@@ -162,13 +172,22 @@
             <!-- Idea 5: Ruta al Título (Solo visible si es Eliminación Directa) -->
             <article class="info-card bracket-card" id="card-bracket-path">
               <header class="info-card__header">
-                <h2 class="info-card__label">🏆 Ruta al Título</h2>
+                <h2 class="info-card__label"><i class="fa-solid fa-trophy"></i> Ruta al Título</h2>
               </header>
               <div class="info-card__body bracket-container" id="bracket-path-container">
                 <!-- El bracket se inyecta aquí -->
               </div>
             </article>
           </div>
+                        <!-- Historial Caimana Flash -->
+            <article class="info-card bracket-card" id="card-flash-history">
+              <header class="info-card__header">
+                <h2 class="info-card__label"><i class="fa-solid fa-bolt"></i> Historial Caimanas Flash</h2>
+              </header>
+              <div class="info-card__body" id="flash-history-container">
+                <!-- Se inyecta aquí -->
+              </div>
+            </article>
 
           <!-- Gráfica Restaurada -->
           <div class="dashboard-chart-container" id="dashboard-stats-container" style="margin-top: 2rem;">
@@ -182,9 +201,20 @@
             </article>
           </div>
 
+        
+
         </div>
 
       </header>
+    </section>
+
+    <!-- Vista: Caimana Flash -->
+    <section class="view-section is-hidden" id="flash-section" aria-labelledby="flash-title">
+      <header class="view-section__header">
+        <h1 class="view-section__title" id="flash-title"><i class="fa-solid fa-bolt"></i> Caimana Flash</h1>
+        <p class="view-section__subtitle">Caimana Flash es un modo rápido para jugar partidos sin necesidad de crear una liga formal. Ideal para entrenamientos, amistosos o torneos improvisados.</p>
+      </header>
+      <div id="flash-content-target"></div>
     </section>
 
     <!-- Vista: Ligas -->
@@ -196,7 +226,6 @@
       <div class="view-section__container" id="leagues-content-target"></div>
       <div id="league-stats-container"></div>
     </section>
-
 
     <!-- Vista: Equipos -->
     <section class="view-section teams-view is-hidden" id="teams-section" aria-labelledby="teams-title">
@@ -218,25 +247,21 @@
     <!-- Vista: Partidos -->
     <section class="view-section matches-view is-hidden" id="matches-section" aria-labelledby="matches-title">
       <header class="view-section__header">
-
         <p class="view-section__subtitle">Partidos, marcadores en vivo y resultados</p>
       </header>
       <div class="view-section__container" id="matches-content-target"></div>
       <div id="match-stats-container"></div>
     </section>
 
-        <!-- Vista: Ayuda -->
+    <!-- Vista: Ayuda -->
     <section class="view-section is-hidden" id="help-section" aria-labelledby="help-title">
       <header class="view-section__header">
-        <h1 class="view-section__title" id="help-title">Centro de Ayuda </h1>
+        <h1 class="view-section__title" id="help-title">Centro de Ayuda</h1>
       </header>
       <div id="help-content-target"></div>
     </section>
 
   </main>
-
- 
-
 
 <!-- NAVEGACION INFERIOR MOVIL -->
 <nav class="nav-mobile" id="nav-mobile" aria-label="Navegación Inferior Móvil">
@@ -253,6 +278,16 @@
       </a>
     </li>
 
+    <!-- Flash -->
+    <li class="nav-mobile__item">
+      <a href="#flash" class="nav-mobile__link" id="nav-mobile-flash">
+        <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        <span class="nav-mobile__label">Caimana Flash</span>
+      </a>
+    </li>
+
     <!-- Ligas -->
     <li class="nav-mobile__item">
       <a href="#leagues" class="nav-mobile__link" id="nav-mobile-leagues">
@@ -265,16 +300,6 @@
           <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
         </svg>
         <span class="nav-mobile__label">Ligas</span>
-      </a>
-    </li>
-
-    <!-- Boton de creacion -->
-    <li class="nav-mobile__item nav-mobile__item--action">
-      <a href="#leagues" class="nav-mobile__action-btn" id="nav-mobile-create" aria-label="Crear Nueva Liga o Registro">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
       </a>
     </li>
 
@@ -303,7 +328,7 @@
         <span class="nav-mobile__label">Partidos</span>
       </a>
     </li>
-
+  <!-- Ayuda -->
     <li class="nav-mobile__item">
       <a href="#help" class="nav-mobile__link" id="nav-mobile-help">
         <svg class="nav-mobile__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

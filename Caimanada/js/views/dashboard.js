@@ -232,4 +232,24 @@ export async function renderDashboardView() {
       chartWrapper.appendChild(msg);
     }
   }
+    // --- HISTORIAL CAIMANA FLASH (Últimas 5) ---
+  const flashHistoryContainer = document.getElementById('flash-history-container');
+  if (flashHistoryContainer) {
+    const history = JSON.parse(localStorage.getItem('caimanada_flash_history') || '[]');
+    if (history.length === 0) {
+      flashHistoryContainer.innerHTML = `<p class="info-card__subtext" style="text-align: center;">Aún no has realizado ninguna Caimana Flash.</p>`;
+    } else {
+      flashHistoryContainer.innerHTML = history.slice(0, 5).map(f => {
+        const date = new Date(f.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <p style="margin: 0; font-weight: bold; color: var(--text-primary);">${date} <span style="color: var(--text-muted); font-weight: normal; font-size: 0.8rem;">(${f.totalMatches} partidos)</span></p>
+              <p style="margin: 0; font-size: 0.8rem; color: var(--accent-primary);">Rey: ${f.topTeam} | MVP: ${f.topScorer}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
 }
