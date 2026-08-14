@@ -3,9 +3,8 @@ import { renderTeamsView } from '../views/teams.js';
 import { renderMatchesView } from '../views/matches.js';
 import { renderDashboardView } from '../views/dashboard.js'; 
 import { renderHelpView } from '../views/help.js';
-import { renderFlashView } from '../views/flash.js'; // <--- NUEVO IMPORT
+import { renderFlashView } from '../views/flash.js'; 
 
-// Función auxiliar para bloquear el selector de deporte en la vista de partidos
 function updateSportSelectorLock(isMatchesView) {
   const selector = document.getElementById('active-sport-selector');
   const badgeContainer = document.getElementById('active-sport-badge'); // Capturamos el contenedor visual
@@ -27,7 +26,7 @@ export function handleRoute() {
   const rawHash = window.location.hash.trim();
   const currentHash = (rawHash && rawHash !== '#') ? rawHash : '#dashboard';
   
-  const baseHash = currentHash.split('/')[0];
+const baseHash = currentHash.split('?')[0].split('/')[0];
   const cleanName = baseHash.replace('#', '');
   const targetSectionId = `${cleanName}-section`;
 

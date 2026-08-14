@@ -48,8 +48,8 @@ function scanFrame(videoElement, onScanSuccess) {
     // Obtenemos los datos de los píxeles
     const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
     
-    // Usamos jsQR para buscar un QR en la imagen
-    // Nota: jsQR es una variable global porque la cargamos vía CDN en el HTML
+    // Usamos jsQR para buscar un QR
+    
     const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
       inversionAttempts: 'dontInvert',
     });

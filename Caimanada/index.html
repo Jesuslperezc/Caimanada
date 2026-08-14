@@ -9,7 +9,6 @@
 
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/svg+xml" href="./assets/Caimanada_logo.png">
-
   <link rel="stylesheet" href="./css/main.css">
   <link rel="stylesheet" href="./css/components.css">
   <link rel="stylesheet" href="./css/views.css">
@@ -21,9 +20,12 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 </head>
 <body>
+
   <!-- ENCABEZADO Y NAVEGACIÓN SUPERIOR -->
+
   <header class="app-header" id="app-header">
     <div class="app-header__container">
       
@@ -179,15 +181,7 @@
               </div>
             </article>
           </div>
-                        <!-- Historial Caimana Flash -->
-            <article class="info-card bracket-card" id="card-flash-history">
-              <header class="info-card__header">
-                <h2 class="info-card__label"><i class="fa-solid fa-bolt"></i> Historial Caimanas Flash</h2>
-              </header>
-              <div class="info-card__body" id="flash-history-container">
-                <!-- Se inyecta aquí -->
-              </div>
-            </article>
+        
 
           <!-- Gráfica Restaurada -->
           <div class="dashboard-chart-container" id="dashboard-stats-container" style="margin-top: 2rem;">
@@ -204,6 +198,15 @@
         
 
         </div>
+                <!-- Historial Caimana Flash -->
+            <article class="info-card bracket-card" id="card-flash-history">
+              <header class="info-card__header">
+                <h2 class="info-card__label"><i class="fa-solid fa-bolt"></i> Historial Caimanas Flash</h2>
+              </header>
+              <div class="info-card__body" id="flash-history-container">
+                <!-- Se inyecta aquí -->
+              </div>
+            </article>
 
       </header>
     </section>
