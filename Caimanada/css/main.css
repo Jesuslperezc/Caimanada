@@ -150,7 +150,7 @@ body::after {
 /* Watermark */
 #app-watermark-footer {
   position: fixed;
-  bottom: 90px;
+  bottom: 60px;
   left: 0;
   width: 100%;
   text-align: center;
@@ -164,10 +164,12 @@ body::after {
   text-transform: uppercase;
   user-select: none;
 }
-
-@media (min-width: 769px) {
+/* En móvil, lo subimos más arriba para que no lo tape la barra flotante */
+@media (max-width: 768px) {
   #app-watermark-footer {
-    bottom: 20px;
-    opacity: 0.2;
+    bottom: 109px; /* Subimos el valor para que se vea completo */
+    font-size: 0.6rem;
+    opacity: 0.3;
+    padding: 0 1rem;
   }
 }
